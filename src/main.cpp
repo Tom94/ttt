@@ -322,6 +322,7 @@ int main(int argc, char** argv) {
 					break;
 				}
 			}
+
 			if (wordError) {
 				misspelled.insert(target.substr(start, i - start));
 			}
@@ -329,10 +330,12 @@ int main(int argc, char** argv) {
 	}
 
 	cout << "\n\n";
+
 	int minutesInt = seconds / 60;
 	int secInt = static_cast<int>(seconds) % 60;
 	cout << "Time: " << minutesInt << ":" << (secInt < 10 ? "0" : "") << secInt << endl;
 	cout << "WPM: " << wpm << endl;
+
 	if (misspelled.empty()) {
 		cout << "No mistakes! 🎉" << endl;
 	} else {
