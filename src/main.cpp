@@ -19,6 +19,7 @@ const string ANSI_GRAY = "\033[38;5;243m";
 const string ANSI_RESET = "\033[0m";
 const string ANSI_CORRECT = "\033[38;5;15m";
 const string ANSI_INCORRECT = "\033[38;5;9m";
+const string ANSI_INCORRECT_WHITESPACE = "\033[41m";
 const string ANSI_CLEAR_LINE = "\r\033[2K";
 const string ANSI_MOVE_CURSOR_TO_BEGINNING_OF_LINE = "\r\033[G";
 
@@ -70,7 +71,11 @@ size_t drawState(const vector<string>& targetLines, const string& userInput) {
 				if (userInput[j] == targetLines[i][local_j]) {
 					cout << ANSI_CORRECT << displayChar(targetLines[i][local_j], isLeading) << ANSI_RESET;
 				} else {
-					cout << ANSI_INCORRECT << displayChar(userInput[j], isLeading) << ANSI_RESET;
+					if (isspace(userInput[j])) {
+						cout << ANSI_INCORRECT_WHITESPACE << displayChar(userInput[j], isLeading) << ANSI_RESET;
+					} else {
+						cout << ANSI_INCORRECT << displayChar(userInput[j], isLeading) << ANSI_RESET;
+					}
 				}
 			} else {
 				cout << ANSI_GRAY << displayChar(targetLines[i][local_j], isLeading) << ANSI_RESET;
