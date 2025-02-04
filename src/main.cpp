@@ -15,7 +15,7 @@ using namespace std;
 
 const string ANSI_SAVE_CURSOR = "\033[s";
 const string ANSI_RESTORE_CURSOR = "\033[u";
-const string ANSI_GRAY = "\033[38;5;8m";
+const string ANSI_GRAY = "\033[38;5;245m";
 const string ANSI_RESET = "\033[0m";
 const string ANSI_CORRECT = "\033[38;5;15m";
 const string ANSI_INCORRECT = "\033[38;5;9m";
@@ -28,12 +28,16 @@ string moveCursorRight(int n) { return "\033[" + to_string(n) + "C"; }
 string moveCursorLeft(int n) { return "\033[" + to_string(n) + "D"; }
 
 string displayChar(char c, bool leading = false) {
-	if (leading && c == ' ') {
-		return "·";
-	}
+	// if (leading && c == ' ') {
+	// 	return "·";
+	// }
+
+	// if (leading && c == '\t') {
+	// 	return "→   ";
+	// }
 
 	if (leading && c == '\t') {
-		return "→   ";
+		return "    ";
 	}
 
 	return string(1, c);
