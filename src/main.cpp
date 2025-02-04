@@ -25,12 +25,12 @@ const string ANSI_INCORRECT_WHITESPACE = "\033[41m";
 const string ANSI_CLEAR_LINE = "\r\033[2K";
 const string ANSI_MOVE_CURSOR_TO_BEGINNING_OF_LINE = "\r\033[G";
 
-string moveCursorUp(int n) { return "\033[" + to_string(n) + "A"; }
-string moveCursorDown(int n) { return "\033[" + to_string(n) + "B"; }
-string moveCursorRight(int n) { return "\033[" + to_string(n) + "C"; }
-string moveCursorLeft(int n) { return "\033[" + to_string(n) + "D"; }
+string move_cursor_up(int n) { return "\033[" + to_string(n) + "A"; }
+string move_cursor_down(int n) { return "\033[" + to_string(n) + "B"; }
+string move_cursor_right(int n) { return "\033[" + to_string(n) + "C"; }
+string move_cursor_left(int n) { return "\033[" + to_string(n) + "D"; }
 
-string displayChar(char c, bool leading = false) {
+string display_char(char c, bool leading = false) {
 	if (leading && c == '\t') {
 		return "    ";
 	}
@@ -38,74 +38,74 @@ string displayChar(char c, bool leading = false) {
 	return string(1, c);
 }
 
-size_t drawState(const vector<string>& targetLines, const string& userInput) {
+size_t draw_state(const vector<string>& target_lines, const string& user_input) {
 	// Compute cumulative offsets for each line within the displayed block.
-	vector<size_t> offsets(targetLines.size());
+	vector<size_t> offsets(target_lines.size());
 	size_t cum = 0;
-	for (size_t i = 0; i < targetLines.size(); i++) {
+	for (size_t i = 0; i < target_lines.size(); i++) {
 		offsets[i] = cum;
-		cum += targetLines[i].size() + 1; // +1 for the newline
+		cum += target_lines[i].size() + 1; // +1 for the newline
 	}
 
 	// Update each displayed line without clearing the entire screen.
-	for (size_t i = 0; i < targetLines.size(); i++) {
+	for (size_t i = 0; i < target_lines.size(); i++) {
 		// Compute leading whitespace count for the current line.
 		int indent = 0;
-		while (indent < (int)targetLines[i].size() && (targetLines[i][indent] == ' ' || targetLines[i][indent] == '\t')) {
+		while (indent < (int)target_lines[i].size() && (target_lines[i][indent] == ' ' || target_lines[i][indent] == '\t')) {
 			indent++;
 		}
 
 		cout << ANSI_CLEAR_LINE;
 		int lineStart = offsets[i];
-		int lineEnd = offsets[i] + targetLines[i].size();
-		for (int j = lineStart; j < lineEnd; j++) {
+		int line_end = offsets[i] + target_lines[i].size();
+		for (int j = lineStart; j < line_end; j++) {
 			int local_j = j - offsets[i];
-			bool isLeading = (local_j < indent);
-			if (j < (int)userInput.size()) {
-				if (userInput[j] == targetLines[i][local_j]) {
-					cout << ANSI_CORRECT << displayChar(targetLines[i][local_j], isLeading) << ANSI_RESET;
+			bool is_leading = (local_j < indent);
+			if (j < (int)user_input.size()) {
+				if (user_input[j] == target_lines[i][local_j]) {
+					cout << ANSI_CORRECT << display_char(target_lines[i][local_j], is_leading) << ANSI_RESET;
 				} else {
-					if (isspace(userInput[j])) {
-						cout << ANSI_INCORRECT_WHITESPACE << displayChar(userInput[j], isLeading) << ANSI_RESET;
+					if (isspace(user_input[j])) {
+						cout << ANSI_INCORRECT_WHITESPACE << display_char(user_input[j], is_leading) << ANSI_RESET;
 					} else {
-						cout << ANSI_INCORRECT << displayChar(userInput[j], isLeading) << ANSI_RESET;
+						cout << ANSI_INCORRECT << display_char(user_input[j], is_leading) << ANSI_RESET;
 					}
 				}
 			} else {
-				cout << ANSI_GRAY << displayChar(targetLines[i][local_j], isLeading) << ANSI_RESET;
+				cout << ANSI_GRAY << display_char(target_lines[i][local_j], is_leading) << ANSI_RESET;
 			}
 		}
 
-		if (i < targetLines.size() - 1) {
+		if (i < target_lines.size() - 1) {
 			cout << "\n";
 		}
 	}
 
 	cout.flush();
-	size_t totalExpected = offsets.back() + targetLines.back().size();
-	return totalExpected;
+	size_t total_expected = offsets.back() + target_lines.back().size();
+	return total_expected;
 }
 
-void moveCursor(const string& userInput) {
+void move_cursor(const string& user_input) {
 	// Determine the cursor's current row and column based on userInput (accounting for tab width).
-	int currentLine = 0, currentCol = 0;
-	for (char ch : userInput) {
+	int current_line = 0, current_col = 0;
+	for (char ch : user_input) {
 		if (ch == '\n') {
-			currentLine++;
-			currentCol = 0;
+			++current_line;
+			current_col = 0;
 		} else if (ch == '\t') {
-			currentCol += 4; // tab display width: arrow plus three spaces
+			current_col += 4; // tab display width: arrow plus three spaces
 		} else {
-			currentCol++;
+			++current_col;
 		}
 	}
 
-	if (currentLine > 0) {
-		cout << moveCursorDown(currentLine);
+	if (current_line > 0) {
+		cout << move_cursor_down(current_line);
 	}
 
-	if (currentCol > 0) {
-		cout << moveCursorRight(currentCol);
+	if (current_col > 0) {
+		cout << move_cursor_right(current_col);
 	}
 
 	cout.flush();
@@ -116,7 +116,7 @@ struct TerminalSettings {
 	int fd;
 	struct termios orig;
 	bool restored;
-	TerminalSettings(int fd_in) : fd(fd_in), restored(false) { tcgetattr(fd, &orig); }
+	TerminalSettings(int fd_in) : fd{fd_in}, restored{false} { tcgetattr(fd, &orig); }
 	~TerminalSettings() { restore(); }
 	void restore() {
 		if (!restored) {
@@ -126,22 +126,22 @@ struct TerminalSettings {
 	}
 };
 
-string wrapText(const string& text, int wrapWidth) {
-	if (wrapWidth <= 0) {
+string wrap_text(const string& text, int wrap_width) {
+	if (wrap_width <= 0) {
 		return text;
 	}
 
 	string wrapped;
 	size_t start = 0;
 	while (start < text.size()) {
-		size_t newlinePos = text.find('\n', start);
+		size_t newline_pos = text.find('\n', start);
 		string paragraph;
-		if (newlinePos == string::npos) {
+		if (newline_pos == string::npos) {
 			paragraph = text.substr(start);
 			start = text.size();
 		} else {
-			paragraph = text.substr(start, newlinePos - start);
-			start = newlinePos + 1;
+			paragraph = text.substr(start, newline_pos - start);
+			start = newline_pos + 1;
 		}
 
 		istringstream iss(paragraph);
@@ -150,7 +150,7 @@ string wrapText(const string& text, int wrapWidth) {
 		for (const auto& word : words) {
 			if (line.empty()) {
 				line = word;
-			} else if (line.size() + 1 + word.size() <= static_cast<size_t>(wrapWidth)) {
+			} else if (line.size() + 1 + word.size() <= static_cast<size_t>(wrap_width)) {
 				line += " " + word;
 			} else {
 				wrapped += line + "\n";
@@ -162,7 +162,7 @@ string wrapText(const string& text, int wrapWidth) {
 			wrapped += line;
 		}
 
-		if (newlinePos != string::npos) {
+		if (newline_pos != string::npos) {
 			wrapped += "\n";
 		}
 	}
@@ -170,7 +170,7 @@ string wrapText(const string& text, int wrapWidth) {
 	return wrapped;
 }
 
-set<string> computeMisspelledWords(const string& target, const string& userInput) {
+set<string> compute_misspelled_words(const string& target, const string& user_input) {
 	set<string> misspelled;
 	size_t i = 0;
 	while (i < target.size()) {
@@ -186,7 +186,7 @@ set<string> computeMisspelledWords(const string& target, const string& userInput
 		if (start < i) {
 			bool wordError = false;
 			for (size_t j = start; j < i; j++) {
-				if (j >= userInput.size() || userInput[j] != target[j]) {
+				if (j >= user_input.size() || user_input[j] != target[j]) {
 					wordError = true;
 					break;
 				}
@@ -202,12 +202,12 @@ set<string> computeMisspelledWords(const string& target, const string& userInput
 
 int main(int argc, char** argv) {
 	// Parse command line options
-	int wrapWidth = 0;
+	int wrap_width{0};
 	for (int i = 1; i < argc; i++) {
-		string arg = argv[i];
+		string arg{argv[i]};
 		if (arg == "-w" && i + 1 < argc) {
 			try {
-				wrapWidth = stoi(argv[++i]);
+				wrap_width = stoi(argv[++i]);
 			} catch (...) {
 				cerr << "Invalid wrap width provided" << endl;
 				return 1;
@@ -216,9 +216,9 @@ int main(int argc, char** argv) {
 	}
 
 	// Get test text from user (multi-line)
-	string target = string((istreambuf_iterator<char>(cin)), istreambuf_iterator<char>());
-	if (wrapWidth > 0) {
-		target = wrapText(target, wrapWidth);
+	string target{istreambuf_iterator<char>(cin), istreambuf_iterator<char>()};
+	if (wrap_width > 0) {
+		target = wrap_text(target, wrap_width);
 	}
 
 	// Trim target text to remove leading/trailing whitespace.
@@ -238,16 +238,16 @@ int main(int argc, char** argv) {
 	}
 
 	// Split target into lines for display.
-	vector<string> targetLines;
+	vector<string> target_lines;
 	{
 		size_t start = 0;
 		size_t found;
 		while ((found = target.find('\n', start)) != string::npos) {
-			targetLines.push_back(target.substr(start, found - start));
+			target_lines.push_back(target.substr(start, found - start));
 			start = found + 1;
 		}
 
-		targetLines.push_back(target.substr(start));
+		target_lines.push_back(target.substr(start));
 	}
 
 	// Enable raw mode (non-canonical, no echo) for character-by-character input on input_fd
@@ -256,14 +256,14 @@ int main(int argc, char** argv) {
 	raw.c_lflag &= ~(ECHO | ICANON);
 	tcsetattr(input_fd, TCSAFLUSH, &raw);
 
-	string userInput;
-	drawState(targetLines, userInput);
+	string user_input;
+	draw_state(target_lines, user_input);
 	bool timing_started = false;
 	chrono::steady_clock::time_point start_time, end_time;
 	char c;
 
 	// Move cursor up to the beginning of the printed block and save as restore point.
-	cout << moveCursorUp(targetLines.size() - 1);
+	cout << move_cursor_up(target_lines.size() - 1);
 	cout << ANSI_MOVE_CURSOR_TO_BEGINNING_OF_LINE;
 	cout << ANSI_SAVE_CURSOR;
 	cout.flush();
@@ -280,23 +280,23 @@ int main(int argc, char** argv) {
 		}
 
 		// Process input: handle backspace or append character.
-		if ((c == 127 || c == '\b') && !userInput.empty()) {
-			userInput.pop_back();
-		} else if (target[userInput.size()] == '\n' && isspace(c)) {
-			userInput.push_back('\n');
+		if ((c == 127 || c == '\b') && !user_input.empty()) {
+			user_input.pop_back();
+		} else if (target[user_input.size()] == '\n' && isspace(c)) {
+			user_input.push_back('\n');
 
 			// Determine current line index by counting newline characters.
-			int currentLine = 0;
-			for (char ch : userInput) {
+			int current_line = 0;
+			for (char ch : user_input) {
 				if (ch == '\n') {
-					currentLine++;
+					++current_line;
 				}
 			}
 
-			// If there is a subsequent line in targetLines, inject its leading whitespace.
-			if ((size_t)currentLine < targetLines.size()) {
+			// If there is a subsequent line in target_lines, inject its leading whitespace.
+			if ((size_t)current_line < target_lines.size()) {
 				string prefix;
-				for (char ch : targetLines[currentLine]) {
+				for (char ch : target_lines[current_line]) {
 					if (ch == ' ' || ch == '\t') {
 						prefix.push_back(ch);
 					} else {
@@ -304,20 +304,20 @@ int main(int argc, char** argv) {
 					}
 				}
 
-				userInput += prefix;
+				user_input += prefix;
 			}
 		} else {
-			userInput.push_back(c);
+			user_input.push_back(c);
 		}
 
 		cout << ANSI_RESTORE_CURSOR;
-		size_t totalExpected = drawState(targetLines, userInput);
+		size_t total_expected = draw_state(target_lines, user_input);
 
 		cout << ANSI_RESTORE_CURSOR;
-		moveCursor(userInput);
+		move_cursor(user_input);
 
 		// Check if typing is complete.
-		if (userInput.size() >= totalExpected) {
+		if (user_input.size() >= total_expected) {
 			break;
 		}
 	}
@@ -328,13 +328,13 @@ int main(int argc, char** argv) {
 	double minutes = seconds / 60.0;
 	double wpm = (target.size() / 5.0) / minutes;
 
-	set<string> misspelled = computeMisspelledWords(target, userInput);
+	set<string> misspelled = compute_misspelled_words(target, user_input);
 
 	cout << "\n\n";
 
-	int minutesInt = seconds / 60;
-	int secInt = static_cast<int>(seconds) % 60;
-	cout << "Time: " << minutesInt << ":" << (secInt < 10 ? "0" : "") << secInt << endl;
+	int minutes_int = seconds / 60;
+	int sec_int = static_cast<int>(seconds) % 60;
+	cout << "Time: " << minutes_int << ":" << (sec_int < 10 ? "0" : "") << sec_int << endl;
 	cout << "WPM: " << wpm << endl;
 
 	if (misspelled.empty()) {
