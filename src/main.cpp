@@ -15,10 +15,10 @@ using namespace std;
 
 const string ANSI_SAVE_CURSOR = "\033[s";
 const string ANSI_RESTORE_CURSOR = "\033[u";
-const string ANSI_GRAY = "\033[90m";
+const string ANSI_GRAY = "\033[38;5;8m";
 const string ANSI_RESET = "\033[0m";
-const string ANSI_CORRECT = "\033[97m";
-const string ANSI_INCORRECT = "\033[91m";
+const string ANSI_CORRECT = "\033[38;5;15m";
+const string ANSI_INCORRECT = "\033[38;5;9m";
 const string ANSI_CLEAR_LINE = "\r\033[2K";
 const string ANSI_MOVE_CURSOR_TO_BEGINNING_OF_LINE = "\r\033[G";
 
