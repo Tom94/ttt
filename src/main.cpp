@@ -5,6 +5,7 @@
 #include <chrono>
 #include <fcntl.h>
 #include <iostream>
+#include <iterator>
 #include <set>
 #include <sstream>
 #include <string>
@@ -125,6 +126,80 @@ struct TerminalSettings {
 	}
 };
 
+string wrapText(const string& text, int wrapWidth) {
+	if (wrapWidth <= 0) {
+		return text;
+	}
+
+	string wrapped;
+	size_t start = 0;
+	while (start < text.size()) {
+		size_t newlinePos = text.find('\n', start);
+		string paragraph;
+		if (newlinePos == string::npos) {
+			paragraph = text.substr(start);
+			start = text.size();
+		} else {
+			paragraph = text.substr(start, newlinePos - start);
+			start = newlinePos + 1;
+		}
+
+		istringstream iss(paragraph);
+		vector<string> words{istream_iterator<string>(iss), istream_iterator<string>()};
+		string line;
+		for (const auto& word : words) {
+			if (line.empty()) {
+				line = word;
+			} else if (line.size() + 1 + word.size() <= static_cast<size_t>(wrapWidth)) {
+				line += " " + word;
+			} else {
+				wrapped += line + "\n";
+				line = word;
+			}
+		}
+
+		if (!line.empty()) {
+			wrapped += line;
+		}
+
+		if (newlinePos != string::npos) {
+			wrapped += "\n";
+		}
+	}
+
+	return wrapped;
+}
+
+set<string> computeMisspelledWords(const string& target, const string& userInput) {
+	set<string> misspelled;
+	size_t i = 0;
+	while (i < target.size()) {
+		while (i < target.size() && isspace((unsigned char)target[i])) {
+			i++;
+		}
+
+		size_t start = i;
+		while (i < target.size() && !isspace((unsigned char)target[i])) {
+			i++;
+		}
+
+		if (start < i) {
+			bool wordError = false;
+			for (size_t j = start; j < i; j++) {
+				if (j >= userInput.size() || userInput[j] != target[j]) {
+					wordError = true;
+					break;
+				}
+			}
+			if (wordError) {
+				misspelled.insert(target.substr(start, i - start));
+			}
+		}
+	}
+
+	return misspelled;
+}
+
 int main(int argc, char** argv) {
 	// Parse command line options
 	int wrapWidth = 0;
@@ -142,52 +217,8 @@ int main(int argc, char** argv) {
 
 	// Get test text from user (multi-line)
 	string target = string((istreambuf_iterator<char>(cin)), istreambuf_iterator<char>());
-
-	// If wrap option provided, perform word wrapping.
 	if (wrapWidth > 0) {
-		string wrapped;
-		size_t start = 0;
-		while (start < target.size()) {
-			size_t newlinePos = target.find('\n', start);
-			string paragraph;
-			if (newlinePos == string::npos) {
-				paragraph = target.substr(start);
-				start = target.size();
-			} else {
-				paragraph = target.substr(start, newlinePos - start);
-				start = newlinePos + 1;
-			}
-
-			istringstream iss(paragraph);
-			vector<string> words;
-			string word;
-			while (iss >> word) {
-				words.push_back(word);
-			}
-
-			string line;
-			for (size_t i = 0; i < words.size(); i++) {
-				if (line.empty()) {
-					line = words[i];
-				} else if (line.size() + words[i].size() < static_cast<size_t>(wrapWidth)) {
-					line += " " + words[i];
-				} else {
-					wrapped += line + "\n";
-					line = words[i];
-				}
-			}
-
-			if (!line.empty()) {
-				wrapped += line;
-			}
-
-			// Preserve the original newline.
-			if (newlinePos != string::npos) {
-				wrapped += "\n";
-			}
-		}
-
-		target = wrapped;
+		target = wrapText(target, wrapWidth);
 	}
 
 	// Trim target text to remove leading/trailing whitespace.
@@ -293,41 +324,11 @@ int main(int argc, char** argv) {
 
 	end_time = chrono::steady_clock::now();
 	term.restore(); // Restore the original terminal settings
-
-	end_time = chrono::steady_clock::now();
 	double seconds = chrono::duration_cast<chrono::duration<double>>(end_time - start_time).count();
 	double minutes = seconds / 60.0;
 	double wpm = (target.size() / 5.0) / minutes;
 
-	// Calculate misspelled words based on final user input compared to target.
-	set<string> misspelled;
-	size_t i = 0;
-	while (i < target.size()) {
-		// Skip over any whitespace.
-		while (i < target.size() && isspace(target[i])) {
-			i++;
-		}
-
-		size_t start = i;
-		// Consume a word.
-		while (i < target.size() && !isspace(target[i])) {
-			i++;
-		}
-
-		if (start < i) {
-			bool wordError = false;
-			for (size_t j = start; j < i; j++) {
-				if (j >= userInput.size() || userInput[j] != target[j]) {
-					wordError = true;
-					break;
-				}
-			}
-
-			if (wordError) {
-				misspelled.insert(target.substr(start, i - start));
-			}
-		}
-	}
+	set<string> misspelled = computeMisspelledWords(target, userInput);
 
 	cout << "\n\n";
 
