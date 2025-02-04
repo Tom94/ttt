@@ -5,6 +5,7 @@
 #include <chrono>
 #include <fcntl.h>
 #include <iostream>
+#include <set>
 #include <sstream>
 #include <string>
 #include <termios.h>
@@ -29,14 +30,6 @@ string moveCursorRight(int n) { return "\033[" + to_string(n) + "C"; }
 string moveCursorLeft(int n) { return "\033[" + to_string(n) + "D"; }
 
 string displayChar(char c, bool leading = false) {
-	// if (leading && c == ' ') {
-	// 	return "·";
-	// }
-
-	// if (leading && c == '\t') {
-	// 	return "→   ";
-	// }
-
 	if (leading && c == '\t') {
 		return "    ";
 	}
@@ -306,18 +299,48 @@ int main(int argc, char** argv) {
 	double minutes = seconds / 60.0;
 	double wpm = (target.size() / 5.0) / minutes;
 
-	// Calculate error count based on final user input compared to target.
-	int errors = 0;
-	for (size_t i = 0; i < target.size(); i++) {
-		if (userInput[i] != target[i]) {
-			errors++;
+	// Calculate misspelled words based on final user input compared to target.
+	set<string> misspelled;
+	size_t i = 0;
+	while (i < target.size()) {
+		// Skip over any whitespace.
+		while (i < target.size() && isspace(target[i])) {
+			i++;
+		}
+
+		size_t start = i;
+		// Consume a word.
+		while (i < target.size() && !isspace(target[i])) {
+			i++;
+		}
+
+		if (start < i) {
+			bool wordError = false;
+			for (size_t j = start; j < i; j++) {
+				if (j >= userInput.size() || userInput[j] != target[j]) {
+					wordError = true;
+					break;
+				}
+			}
+			if (wordError) {
+				misspelled.insert(target.substr(start, i - start));
+			}
 		}
 	}
 
 	cout << "\n\n";
 	cout << "Time: " << seconds << " seconds" << endl;
 	cout << "WPM: " << wpm << endl;
-	cout << "Errors: " << errors << endl;
+	cout << "Misspelled words: ";
+	bool first = true;
+	for (const auto& word : misspelled) {
+		if (!first) {
+			cout << ", ";
+		}
+		cout << word;
+		first = false;
+	}
+	cout << endl;
 
 	// Close input_fd if we opened /dev/tty
 	if (input_fd != STDIN_FILENO) {
