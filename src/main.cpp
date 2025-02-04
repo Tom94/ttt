@@ -1,15 +1,15 @@
 // This file was developed by Thomas Müller <contact@tom94.net>.
 // It is published under the GPLv3 License; see the LICENSE file.
 
+#include <cctype>
 #include <chrono>
 #include <fcntl.h>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <termios.h>
 #include <unistd.h>
 #include <vector>
-#include <cctype>
-#include <sstream>
 
 using namespace std;
 
@@ -33,13 +33,9 @@ string displayChar(char c, bool leading = false) {
 	return string(1, c);
 }
 
-string moveCursorDown(int n) {
-	return "\033[" + to_string(n) + "B";
-}
+string moveCursorDown(int n) { return "\033[" + to_string(n) + "B"; }
 
-string moveCursorRight(int n) {
-	return "\033[" + to_string(n) + "C";
-}
+string moveCursorRight(int n) { return "\033[" + to_string(n) + "C"; }
 
 size_t drawTestState(const vector<string>& targetLines, const string& userInput) {
 	// Restore the cursor to the saved position.
