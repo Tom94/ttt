@@ -109,8 +109,6 @@ size_t drawTestState(const vector<string>& targetLines, const string& userInput)
 }
 
 // Helper class to ensure terminal settings are restored on exit.
-
-// Helper class to ensure terminal settings are restored on exit.
 struct TerminalSettings {
 	int fd;
 	struct termios orig;
@@ -270,6 +268,7 @@ int main(int argc, char** argv) {
 						break;
 					}
 				}
+
 				userInput += prefix;
 			}
 		} else {
@@ -283,6 +282,7 @@ int main(int argc, char** argv) {
 			break;
 		}
 	}
+
 	end_time = chrono::steady_clock::now();
 	term.restore(); // Restore the original terminal settings
 
