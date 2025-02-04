@@ -329,18 +329,24 @@ int main(int argc, char** argv) {
 	}
 
 	cout << "\n\n";
-	cout << "Time: " << seconds << " seconds" << endl;
+	int minutesInt = seconds / 60;
+	int secInt = static_cast<int>(seconds) % 60;
+	cout << "Time: " << minutesInt << ":" << (secInt < 10 ? "0" : "") << secInt << endl;
 	cout << "WPM: " << wpm << endl;
-	cout << "Misspelled words: ";
-	bool first = true;
-	for (const auto& word : misspelled) {
-		if (!first) {
-			cout << ", ";
+	if (misspelled.empty()) {
+		cout << "No mistakes! 🎉" << endl;
+	} else {
+		cout << "Misspelled words: ";
+		bool first = true;
+		for (const auto& word : misspelled) {
+			if (!first) {
+				cout << ", ";
+			}
+			cout << word;
+			first = false;
 		}
-		cout << word;
-		first = false;
+		cout << endl;
 	}
-	cout << endl;
 
 	// Close input_fd if we opened /dev/tty
 	if (input_fd != STDIN_FILENO) {
