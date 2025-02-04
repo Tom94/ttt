@@ -20,6 +20,12 @@ const string ANSI_RESET = "\033[0m";
 const string ANSI_CORRECT = "\033[97m";
 const string ANSI_INCORRECT = "\033[91m";
 const string ANSI_CLEAR_LINE = "\r\033[2K";
+const string ANSI_MOVE_CURSOR_TO_BEGINNING_OF_LINE = "\r\033[G";
+
+string moveCursorUp(int n) { return "\033[" + to_string(n) + "A"; }
+string moveCursorDown(int n) { return "\033[" + to_string(n) + "B"; }
+string moveCursorRight(int n) { return "\033[" + to_string(n) + "C"; }
+string moveCursorLeft(int n) { return "\033[" + to_string(n) + "D"; }
 
 string displayChar(char c, bool leading = false) {
 	if (leading && c == ' ') {
@@ -33,14 +39,7 @@ string displayChar(char c, bool leading = false) {
 	return string(1, c);
 }
 
-string moveCursorDown(int n) { return "\033[" + to_string(n) + "B"; }
-
-string moveCursorRight(int n) { return "\033[" + to_string(n) + "C"; }
-
-size_t drawTestState(const vector<string>& targetLines, const string& userInput) {
-	// Restore the cursor to the saved position.
-	cout << ANSI_RESTORE_CURSOR;
-
+size_t drawState(const vector<string>& targetLines, const string& userInput) {
 	// Compute cumulative offsets for each line within the displayed block.
 	vector<size_t> offsets(targetLines.size());
 	size_t cum = 0;
@@ -79,6 +78,12 @@ size_t drawTestState(const vector<string>& targetLines, const string& userInput)
 		}
 	}
 
+	cout.flush();
+	size_t totalExpected = offsets.back() + targetLines.back().size();
+	return totalExpected;
+}
+
+void moveCursor(const string& userInput) {
 	// Determine the cursor's current row and column based on userInput (accounting for tab width).
 	int currentLine = 0, currentCol = 0;
 	for (char ch : userInput) {
@@ -92,8 +97,6 @@ size_t drawTestState(const vector<string>& targetLines, const string& userInput)
 		}
 	}
 
-	// Reposition the cursor relative to the previously saved position.
-	cout << ANSI_RESTORE_CURSOR;
 	if (currentLine > 0) {
 		cout << moveCursorDown(currentLine);
 	}
@@ -103,9 +106,6 @@ size_t drawTestState(const vector<string>& targetLines, const string& userInput)
 	}
 
 	cout.flush();
-
-	size_t totalExpected = offsets.back() + targetLines.back().size();
-	return totalExpected;
 }
 
 // Helper class to ensure terminal settings are restored on exit.
@@ -217,10 +217,6 @@ int main(int argc, char** argv) {
 		targetLines.push_back(target.substr(start));
 	}
 
-	// Move cursor up to the beginning of the printed block.
-	cout << ANSI_SAVE_CURSOR;
-	cout.flush();
-
 	// Enable raw mode (non-canonical, no echo) for character-by-character input on input_fd
 	TerminalSettings term(input_fd);
 	struct termios raw = term.orig;
@@ -228,10 +224,16 @@ int main(int argc, char** argv) {
 	tcsetattr(input_fd, TCSAFLUSH, &raw);
 
 	string userInput;
-	drawTestState(targetLines, userInput);
+	drawState(targetLines, userInput);
 	bool timing_started = false;
 	chrono::steady_clock::time_point start_time, end_time;
 	char c;
+
+	// Move cursor up to the beginning of the printed block and save as restore point.
+	cout << moveCursorUp(targetLines.size() - 1);
+	cout << ANSI_MOVE_CURSOR_TO_BEGINNING_OF_LINE;
+	cout << ANSI_SAVE_CURSOR;
+	cout.flush();
 
 	while (true) {
 		ssize_t n = read(input_fd, &c, 1);
@@ -275,7 +277,11 @@ int main(int argc, char** argv) {
 			userInput.push_back(c);
 		}
 
-		size_t totalExpected = drawTestState(targetLines, userInput);
+		cout << ANSI_RESTORE_CURSOR;
+		size_t totalExpected = drawState(targetLines, userInput);
+
+		cout << ANSI_RESTORE_CURSOR;
+		moveCursor(userInput);
 
 		// Check if typing is complete.
 		if (userInput.size() >= totalExpected) {
