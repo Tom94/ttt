@@ -186,8 +186,13 @@ int main(int argc, char** argv) {
 				wrapped += "\n";
 			}
 		}
+
 		target = wrapped;
 	}
+
+	// Trim target text to remove leading/trailing whitespace.
+	target.erase(target.begin(), find_if(target.begin(), target.end(), [](unsigned char ch) { return !isspace(ch); }));
+	target.erase(find_if(target.rbegin(), target.rend(), [](unsigned char ch) { return !isspace(ch); }).base(), target.end());
 
 	// Determine the interactive input file descriptor.
 	int input_fd;
@@ -289,17 +294,12 @@ int main(int argc, char** argv) {
 	// Calculate error count based on final user input compared to target.
 	int errors = 0;
 	for (size_t i = 0; i < target.size(); i++) {
-		if (target[i] == '\n') {
-			if (!(userInput[i] == '\n' || userInput[i] == '\r' || userInput[i] == ' ')) {
-				errors++;
-			}
-		} else {
-			if (userInput[i] != target[i]) {
-				errors++;
-			}
+		if (userInput[i] != target[i]) {
+			errors++;
 		}
 	}
 
+	cout << "\n\n";
 	cout << "Time: " << seconds << " seconds" << endl;
 	cout << "WPM: " << wpm << endl;
 	cout << "Errors: " << errors << endl;
