@@ -15,7 +15,7 @@ using namespace std;
 
 const string ANSI_SAVE_CURSOR = "\033[s";
 const string ANSI_RESTORE_CURSOR = "\033[u";
-const string ANSI_GRAY = "\033[38;5;245m";
+const string ANSI_GRAY = "\033[38;5;243m";
 const string ANSI_RESET = "\033[0m";
 const string ANSI_CORRECT = "\033[38;5;15m";
 const string ANSI_INCORRECT = "\033[38;5;9m";
