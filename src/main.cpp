@@ -280,9 +280,18 @@ int main(int argc, char** argv) {
 			timing_started = true;
 		}
 
-		// Process input: handle backspace or append character.
+		// Process input: handle backspace, Ctrl-W (delete last word), or append character.
 		if ((c == 127 || c == '\b') && !user_input.empty()) {
 			user_input.pop_back();
+		} else if (c == 23 && !user_input.empty()) {
+			// Delete any trailing whitespace first.
+			while (!user_input.empty() && isspace(user_input.back())) {
+				user_input.pop_back();
+			}
+			// Then delete characters until the previous whitespace.
+			while (!user_input.empty() && !isspace(user_input.back())) {
+				user_input.pop_back();
+			}
 		} else if (target[user_input.size()] == '\n' && isspace(c)) {
 			user_input.push_back('\n');
 
