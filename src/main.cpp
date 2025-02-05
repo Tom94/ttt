@@ -338,27 +338,25 @@ int main(int argc, char** argv) {
 	double minutes = seconds / 60.0;
 	double wpm = (target.size() / 5.0) / minutes;
 
-	// Compute the number of correct characters.
-	size_t correct_chars = 0;
+	size_t n_correct_chars = 0;
 	for (size_t i = 0; i < target.size(); i++) {
 		if (target[i] == user_input[i]) {
-			++correct_chars;
+			++n_correct_chars;
 		}
 	}
 
-	double accuracy = (static_cast<double>(correct_chars) / target.size()) * 100.0;
-	double cpm = target.size() / minutes;
+	double accuracy = (static_cast<double>(n_correct_chars) / target.size()) * 100.0;
 
 	set<string> misspelled = find_misspelled_words(target, user_input);
 
 	int minutes_int = seconds / 60;
 	int sec_int = static_cast<int>(seconds) % 60;
 
-	cout << std::format("\n\nTime: {}:{:02}\nWPM: {}\nCPM: {}\nAccuracy: {:.2f}%\n", minutes_int, sec_int, wpm, cpm, accuracy);
+	cout << std::format(
+		"\n\nTime: {}:{:02}, WPM: {:.0f}, Accuracy: {:.2f}% {}\n", minutes_int, sec_int, wpm, accuracy, accuracy == 100 ? "🎉" : ""
+	);
 
-	if (misspelled.empty()) {
-		cout << "No mistakes! 🎉" << endl;
-	} else {
+	if (!misspelled.empty()) {
 		cout << "Misspelled words: ";
 		bool first = true;
 		for (const auto& word : misspelled) {
