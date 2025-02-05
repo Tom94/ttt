@@ -4,6 +4,7 @@
 #include <cctype>
 #include <chrono>
 #include <fcntl.h>
+#include <format>
 #include <iostream>
 #include <iterator>
 #include <set>
@@ -25,10 +26,10 @@ const string ANSI_INCORRECT_WHITESPACE = "\033[41m";
 const string ANSI_CLEAR_LINE = "\r\033[2K";
 const string ANSI_MOVE_CURSOR_TO_BEGINNING_OF_LINE = "\r\033[G";
 
-string move_cursor_up(int n) { return "\033[" + to_string(n) + "A"; }
-string move_cursor_down(int n) { return "\033[" + to_string(n) + "B"; }
-string move_cursor_right(int n) { return "\033[" + to_string(n) + "C"; }
-string move_cursor_left(int n) { return "\033[" + to_string(n) + "D"; }
+string move_cursor_up(int n) { return std::format("\033[{}A", n); }
+string move_cursor_down(int n) { return std::format("\033[{}B", n); }
+string move_cursor_right(int n) { return std::format("\033[{}C", n); }
+string move_cursor_left(int n) { return std::format("\033[{}D", n); }
 
 string display_char(char c, bool leading = false) {
 	if (leading && c == '\t') {
@@ -334,7 +335,8 @@ int main(int argc, char** argv) {
 
 	int minutes_int = seconds / 60;
 	int sec_int = static_cast<int>(seconds) % 60;
-	cout << "Time: " << minutes_int << ":" << (sec_int < 10 ? "0" : "") << sec_int << endl;
+
+	cout << std::format("Time: {}:{:02}\n", minutes_int, sec_int);
 	cout << "WPM: " << wpm << endl;
 
 	if (misspelled.empty()) {
