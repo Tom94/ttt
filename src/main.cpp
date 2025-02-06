@@ -192,6 +192,7 @@ set<string> find_misspelled_words(const string& target, const string& user_input
 					break;
 				}
 			}
+
 			if (wordError) {
 				misspelled.insert(target.substr(start, i - start));
 			}
@@ -363,7 +364,8 @@ int main(int argc, char** argv) {
 			if (!first) {
 				cout << ", ";
 			}
-			cout << word;
+
+			cout << std::format("\"{}\"", word);
 			first = false;
 		}
 		cout << endl;
