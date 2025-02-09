@@ -487,6 +487,21 @@ void print_help() {
 
 void print_version() { cout << "ttt — terminal typing test" << endl << "version " << TTT_VERSION << endl; }
 
+string ls(const string& path) {
+	ostringstream result;
+	bool first = true;
+	for (const auto& entry : g_fs.iterate_directory(path)) {
+		if (!first) {
+			result << ", ";
+		}
+
+		first = false;
+		result << entry.filename();
+	}
+
+	return result.str();
+}
+
 int main(const vector<string>& args) {
 	string quote_list_name = "en";
 	string word_list_name = "1000en";
@@ -545,7 +560,7 @@ int main(const vector<string>& args) {
 				auto words_file = g_fs.open(format("resources/words/{}", word_list_name));
 				string words_string = {words_file.cbegin(), words_file.cend()};
 				words = split(words_string, "\n");
-			} catch (...) { throw invalid_argument{"Invalid word list name provided"}; }
+			} catch (...) { throw invalid_argument{format("Invalid word list name provided. Available lists: {}", ls("resources/words"))}; }
 
 			vector<string> selected_words;
 			uniform_int_distribution<> dis(0, words.size() - 1);
@@ -561,7 +576,7 @@ int main(const vector<string>& args) {
 			try {
 				auto quotes_file = g_fs.open(format("resources/quotes/{}", quote_list_name));
 				quotes = json::parse(quotes_file);
-			} catch (...) { throw invalid_argument{"Invalid quote list name provided"}; }
+			} catch (...) { throw invalid_argument{format("Invalid quote list name provided. Available lists: {}", ls("resources/quotes"))}; }
 
 			if (quotes.size() == 0) {
 				throw runtime_error{"No quotes found"};
