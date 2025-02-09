@@ -18,6 +18,8 @@
 
 using namespace std;
 
+size_t tab_width = 4;
+
 // Returns the number of bytes in a UTF-8 character based on its first byte
 int utf8_char_length(unsigned char first_byte) {
 	if ((first_byte & 0x80) == 0) {
@@ -93,6 +95,15 @@ size_t find_grapheme_cluster_end(const string& str, size_t start) {
 int get_char_width(const string& str, size_t pos) {
 	if (pos >= str.length()) {
 		return 0;
+	}
+
+	if (is_utf8_continuation(str[pos])) {
+		return 1;
+	}
+
+	// Tab width
+	if (str[pos] == '\t') {
+		return tab_width;
 	}
 
 	// Convert the UTF-8 character to a wide character
@@ -231,9 +242,6 @@ void move_cursor(const string& user_input) {
 		if (user_input[pos] == '\n') {
 			++current_line;
 			current_col = 0;
-			pos++;
-		} else if (user_input[pos] == '\t') {
-			current_col += 4; // tab display width: arrow plus three spaces
 			pos++;
 		} else {
 			current_col += get_char_width(user_input, pos);
@@ -469,7 +477,10 @@ int main(int argc, char** argv) {
 	char c;
 
 	// Move cursor up to the beginning of the printed block and save as restore point.
-	cout << move_cursor_up(target_lines.size() - 1);
+	if (target_lines.size() > 1) {
+		cout << move_cursor_up(target_lines.size() - 1);
+	}
+
 	cout << ANSI_MOVE_CURSOR_TO_BEGINNING_OF_LINE;
 	cout << ANSI_SAVE_CURSOR;
 	cout.flush();
