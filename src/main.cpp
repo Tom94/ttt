@@ -11,7 +11,6 @@
 #include <cctype>
 #include <chrono>
 #include <cstring>
-#include <fcntl.h>
 #include <format>
 #include <iostream>
 #include <iterator>
@@ -19,15 +18,19 @@
 #include <set>
 #include <sstream>
 #include <string>
-#include <termios.h>
-#include <unistd.h>
 #include <vector>
 #include <wchar.h>
 
 #ifdef _WIN32
+#	define NOMINMAX
+#	include <io.h>
 #	include <windows.h>
+#	undef NOMINMAX
 #else
+#	include <fcntl.h>
 #	include <sys/ioctl.h>
+#	include <termios.h>
+#	include <unistd.h>
 #endif
 
 using namespace std;
@@ -323,11 +326,41 @@ void move_cursor(const string& user_input) {
 }
 
 // Helper class to ensure terminal settings are restored on exit.
+#ifdef _WIN32
+struct TerminalSettings {
+	HANDLE hStdin;
+	DWORD orig_mode;
+	bool restored;
+	TerminalSettings(int) : restored{false} {
+		hStdin = GetStdHandle(STD_INPUT_HANDLE);
+		GetConsoleMode(hStdin, &orig_mode);
+
+		// Enable raw input mode
+		DWORD mode = orig_mode;
+		mode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+		SetConsoleMode(hStdin, mode);
+	}
+	~TerminalSettings() { restore(); }
+	void restore() {
+		if (!restored) {
+			SetConsoleMode(hStdin, orig_mode);
+			restored = true;
+		}
+	}
+};
+#else
 struct TerminalSettings {
 	int fd;
 	struct termios orig;
 	bool restored;
-	TerminalSettings(int fd_in) : fd{fd_in}, restored{false} { tcgetattr(fd, &orig); }
+	TerminalSettings(int fd_in) : fd{fd_in}, restored{false} {
+		tcgetattr(fd, &orig);
+
+		// Enable raw input mode
+		struct termios raw = orig;
+		raw.c_lflag &= ~(ECHO | ICANON);
+		tcsetattr(fd, TCSAFLUSH, &raw);
+	}
 	~TerminalSettings() { restore(); }
 	void restore() {
 		if (!restored) {
@@ -336,6 +369,7 @@ struct TerminalSettings {
 		}
 	}
 };
+#endif
 
 string wrap_text(const string& text, int wrap_width) {
 	if (wrap_width <= 0) {
@@ -578,7 +612,6 @@ int main(const vector<string>& args) {
 			words = split(words_string, "\n");
 		} catch (...) { throw invalid_argument{format("Invalid word list name provided. Available lists: {}", ls("resources/words"))}; }
 
-
 		random_device rd;
 		mt19937 gen(rd());
 		uniform_int_distribution<> dis(0, words.size() - 1);
@@ -633,6 +666,15 @@ int main(const vector<string>& args) {
 
 	// Determine the interactive input file descriptor.
 	int input_fd;
+#ifdef _WIN32
+	input_fd = _fileno(stdin);
+	// Enable ANSI escape sequences on Windows
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	DWORD dwMode = 0;
+	GetConsoleMode(hOut, &dwMode);
+	dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	SetConsoleMode(hOut, dwMode);
+#else
 	if (isatty(STDIN_FILENO)) {
 		input_fd = STDIN_FILENO;
 	} else {
@@ -641,6 +683,7 @@ int main(const vector<string>& args) {
 			throw runtime_error{"Cannot open /dev/tty"};
 		}
 	}
+#endif
 
 	// Split target into lines for display.
 	vector<string> target_lines;
@@ -655,11 +698,8 @@ int main(const vector<string>& args) {
 		target_lines.push_back(target.substr(start));
 	}
 
-	// Enable raw mode (non-canonical, no echo) for character-by-character input on input_fd
+	// The terminal settings object enables raw input mode and automatically reverts to default settings when destructed
 	TerminalSettings term(input_fd);
-	struct termios raw = term.orig;
-	raw.c_lflag &= ~(ECHO | ICANON);
-	tcsetattr(input_fd, TCSAFLUSH, &raw);
 
 	string user_input;
 	draw_state(target_lines, user_input);
@@ -677,7 +717,15 @@ int main(const vector<string>& args) {
 	cout.flush();
 
 	while (true) {
+#ifdef _WIN32
+		DWORD n;
+		if (!ReadConsoleA(GetStdHandle(STD_INPUT_HANDLE), &c, 1, &n, NULL)) {
+			continue;
+		}
+#else
 		ssize_t n = read(input_fd, &c, 1);
+#endif
+
 		if (n <= 0) {
 			continue;
 		}
