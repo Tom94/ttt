@@ -167,9 +167,31 @@ int get_char_width(const string& str, size_t pos) {
 	strncpy(buf, &str[pos], len);
 	mbtowc(&wc, buf, len);
 
-	// Get the display width using wcwidth
+#ifdef _WIN32
+	CONSOLE_FONT_INFO font_info;
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (!GetCurrentConsoleFont(hConsole, FALSE, &font_info)) {
+		return 1;
+	}
+
+	// Check if character is a full-width character
+	WORD char_type;
+	if (!GetStringTypeW(CT_CTYPE1, &wc, 1, &char_type)) {
+		return 1;
+	}
+
+	if (char_type & C1_FULLWIDTH) {
+		return 2;
+	} else if (wc >= 0x1F300) {
+		// Unicode range for emojis and other symbols
+		return 2;
+	}
+
+	return 1;
+#else
 	int width = wcwidth(wc);
 	return width >= 0 ? width : 1;
+#endif
 }
 
 // Get the next UTF-8 character position
