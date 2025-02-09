@@ -5,7 +5,10 @@ This is a terminal program to test your typing speed, written in C++.
 ## How to run
 
 Simply pipe the text you'd like to type into `ttt`.
-I recommend generating some on the fly with a language model and the amazing [aichat](https://github.com/sigoden/aichat) program.
+
+https://github.com/user-attachments/assets/2ba5599f-d799-4771-878d-0413380693fa
+
+In practice, I recommend generating text on the fly with a language model, e.g., via [aichat](https://github.com/sigoden/aichat).
 
 ```bash
 $ aichat "Write a short paragraph about space travel." | ttt
