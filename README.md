@@ -1,6 +1,7 @@
 # terminal typing test
 
 This is a terminal program to test your typing speed, written in C++.
+Supports UTF-8 (Asian languages) and code (auto indentation).
 
 ## How to run
 
@@ -19,6 +20,12 @@ void stretched endless and dark. We sailed on.
 
 Time: 0:10, WPM: 143, Accuracy: 100.00% 🎉
 ```
+
+### Options
+
+- `-w`, `--wrap` to word wrap to the given width (no wrapping by default)
+- `-h`, `--help` to show help info
+- `-v`, `--version` to show version info
 
 ## How to build
 

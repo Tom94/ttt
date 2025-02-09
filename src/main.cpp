@@ -414,12 +414,33 @@ set<string> find_misspelled_words(const string& target, const string& user_input
 	return misspelled;
 }
 
+void print_help() {
+	cout << "Usage: ttt [OPTIONS]\n"
+		 << "A terminal-based typing test.\n"
+		 << "\n"
+		 << "Options:\n"
+		 << "  -h, --help        Show this help message and exit\n"
+		 << "  -v, --version     Show version information and exit\n"
+		 << "  -w, --wrap WIDTH  Word-wrap text at WIDTH characters\n"
+		 << "\n"
+		 << "Input text via stdin. Press ESC or Ctrl-C to quit.\n";
+	cout.flush();
+}
+
+void print_version() { cout << "ttt — terminal typing test" << endl << "version " << TTT_VERSION << endl; }
+
 int main(int argc, char** argv) {
 	// Parse command line options
 	int wrap_width{0};
 	for (int i = 1; i < argc; i++) {
 		string arg{argv[i]};
-		if (arg == "-w" && i + 1 < argc) {
+		if (arg == "-h" || arg == "--help") {
+			print_help();
+			return 0;
+		} else if (arg == "-v" || arg == "--version") {
+			print_version();
+			return 0;
+		} else if ((arg == "-w" || arg == "--wrap") && i + 1 < argc) {
 			try {
 				wrap_width = stoi(argv[++i]);
 			} catch (...) {
