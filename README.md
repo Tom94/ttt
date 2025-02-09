@@ -1,7 +1,7 @@
 # terminal typing test
 
 **ttt** is a terminal program to test your typing speed, written in C++.
-Supports code (auto indentation) and unicode (Asian languages).
+Supports code (auto indentation) and unicode (all languages of the world).
 
 ## How to run
 
