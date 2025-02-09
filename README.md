@@ -1,7 +1,7 @@
 # terminal typing test
 
-This is a terminal program to test your typing speed, written in C++.
-Supports UTF-8 (Asian languages) and code (auto indentation).
+**ttt** is a terminal program to test your typing speed, written in C++.
+Supports code (auto indentation) and unicode (Asian languages).
 
 ## How to run
 
@@ -40,7 +40,7 @@ $ cmake --build build
 
 ## How it was made
 
-I wanted to test o3-mini's coding ability and this seemed like a fun way to do it.
+I wanted to play around with AI-assisted coding and creating **ttt** seemed like a fun way to do it.
 Ergo: this project was mostly written by AI, with me stepping in just to fix a bug here and there, but mostly just prompting away.
 It's amazing how far AI has come!
 
@@ -51,6 +51,16 @@ I used [neovim](https://neovim.io/) with the [avante plugin](https://github.com/
 - [ ] Better (configurable?) colors
 - [ ] Windows support
 - [ ] Squash bugs as they appear
+
+## Shoutouts
+
+- [aichat](https://github.com/sigoden/aichat): the perfect companion to **ttt**
+- [unilib](https://github.com/ufal/unilib): for making unicode handling a breeze
+- [tt](https://github.com/lemnos/tt): another terminal typing test with different feature set. differences to **ttt**:
+  - doesn't support code or unicode
+  - has a full-screen tui rather than being inline
+  - more CLI options and features, including built-in word lists
+
 
 ## License
 
