@@ -1,6 +1,10 @@
 // This file was developed by Thomas Müller <contact@tom94.net>.
 // It is published under the GPLv3 License; see the LICENSE file.
 
+#include <cmrc/cmrc.hpp>
+
+#include <json/json.hpp>
+
 #include <unilib/uninorms.h>
 #include <unilib/utf.h>
 
@@ -11,6 +15,7 @@
 #include <format>
 #include <iostream>
 #include <iterator>
+#include <random>
 #include <set>
 #include <sstream>
 #include <string>
@@ -20,8 +25,44 @@
 #include <wchar.h>
 
 using namespace std;
+using namespace nlohmann;
 
-size_t tab_width = 4;
+CMRC_DECLARE(ttt);
+
+namespace ttt {
+
+auto g_fs = cmrc::ttt::get_filesystem();
+
+size_t g_tab_width = 4;
+
+template <typename T> std::string join(const T& components, const std::string& delim) {
+	std::ostringstream s;
+	for (const auto& component : components) {
+		if (&components[0] != &component) {
+			s << delim;
+		}
+		s << component;
+	}
+
+	return s.str();
+}
+
+vector<string> split(string text, const string& delim) {
+	vector<string> result;
+	size_t begin = 0;
+	while (true) {
+		size_t end = text.find_first_of(delim, begin);
+		if (end == string::npos) {
+			result.emplace_back(text.substr(begin));
+			return result;
+		} else {
+			result.emplace_back(text.substr(begin, end - begin));
+			begin = end + 1;
+		}
+	}
+
+	return result;
+}
 
 // Returns the number of bytes in a UTF-8 character based on its first byte
 int utf8_char_length(unsigned char first_byte) {
@@ -107,7 +148,7 @@ int get_char_width(const string& str, size_t pos) {
 
 	// Tab width
 	if (str[pos] == '\t') {
-		return tab_width;
+		return g_tab_width;
 	}
 
 	// Convert the UTF-8 character to a wide character
@@ -433,9 +474,12 @@ void print_help() {
 		 << "A terminal-based typing test.\n"
 		 << "\n"
 		 << "Options:\n"
-		 << "  -h, --help        Show this help message and exit\n"
-		 << "  -v, --version     Show version information and exit\n"
-		 << "  -w, --wrap WIDTH  Word-wrap text at WIDTH characters\n"
+		 << "  -h, --help                 Show this help message and exit\n"
+		 << "  -v, --version              Show version information and exit\n"
+		 << "  -n, --nwords N [LISTNAME]  N random words [word list name]\n"
+		 << "  -q, --quote [LISTNAME]     Random quote from list [quote list name]\n"
+		 << "  -t, --tab WIDTH            Tab width\n"
+		 << "  -w, --wrap WIDTH           Word-wrap text at WIDTH characters\n"
 		 << "\n"
 		 << "Input text via stdin. Press ESC or Ctrl-C to quit.\n";
 	cout.flush();
@@ -443,29 +487,98 @@ void print_help() {
 
 void print_version() { cout << "ttt — terminal typing test" << endl << "version " << TTT_VERSION << endl; }
 
-int main(int argc, char** argv) {
+int main(const vector<string>& args) {
+	string quote_list_name = "en";
+	string word_list_name = "1000en";
+	size_t n_words = 0;
+
 	// Parse command line options
-	int wrap_width{0};
-	for (int i = 1; i < argc; i++) {
-		string arg{argv[i]};
+	size_t wrap_width{0};
+	for (size_t i = 1; i < args.size(); i++) {
+		const string& arg = args[i];
 		if (arg == "-h" || arg == "--help") {
 			print_help();
 			return 0;
 		} else if (arg == "-v" || arg == "--version") {
 			print_version();
 			return 0;
-		} else if ((arg == "-w" || arg == "--wrap") && i + 1 < argc) {
-			try {
-				wrap_width = stoi(argv[++i]);
-			} catch (...) {
-				cerr << "Invalid wrap width provided" << endl;
-				return 1;
+		} else if ((arg == "-n" || arg == "--nwords")) {
+			if (i + 1 < args.size()) {
+				try {
+					n_words = stoul(args[++i]);
+				} catch (...) { throw invalid_argument{"Invalid number of words provided"}; }
 			}
+
+			if (i + 1 < args.size() && !args[i + 1].starts_with('-')) {
+				word_list_name = args[++i];
+			}
+		} else if ((arg == "-q" || arg == "--quote")) {
+			if (i + 1 < args.size() && !args[i + 1].starts_with('-')) {
+				quote_list_name = args[++i];
+			}
+		} else if ((arg == "-w" || arg == "--wrap") && i + 1 < args.size()) {
+			try {
+				wrap_width = stoul(args[++i]);
+			} catch (...) { throw invalid_argument{"Invalid wrap width provided"}; }
+		} else if ((arg == "-t" || arg == "--tab") && i + 1 < args.size()) {
+			try {
+				wrap_width = stoul(args[++i]);
+			} catch (...) { throw invalid_argument{"Invalid wrap width provided"}; }
 		}
 	}
 
-	// Get test text from user (multi-line)
-	string target{istreambuf_iterator<char>(cin), istreambuf_iterator<char>()};
+	// First try to get text from stdin
+	string target;
+	if (cin.rdbuf()->in_avail()) {
+		target = string{istreambuf_iterator<char>(cin), istreambuf_iterator<char>()};
+	}
+
+	if (target.empty()) {
+		random_device rd;
+		mt19937 gen(rd());
+
+		// If no text was provided, generate a random quote or words
+		if (n_words > 0) {
+			vector<string> words;
+
+			try {
+				auto words_file = g_fs.open(format("resources/words/{}", word_list_name));
+				string words_string = {words_file.cbegin(), words_file.cend()};
+				words = split(words_string, "\n");
+			} catch (...) { throw invalid_argument{"Invalid word list name provided"}; }
+
+			vector<string> selected_words;
+			uniform_int_distribution<> dis(0, words.size() - 1);
+
+			for (size_t i = 0; i < n_words; i++) {
+				selected_words.push_back(words[dis(gen)]);
+			}
+
+			target = join(selected_words, " ");
+		} else {
+			json quotes;
+
+			try {
+				auto quotes_file = g_fs.open(format("resources/quotes/{}", quote_list_name));
+				quotes = json::parse(quotes_file);
+			} catch (...) { throw invalid_argument{"Invalid quote list name provided"}; }
+
+			if (quotes.size() == 0) {
+				throw runtime_error{"No quotes found"};
+			}
+
+			uniform_int_distribution<> dis(0, quotes.size() - 1);
+			const json& quote = quotes[dis(gen)];
+
+			target = quote.value("text", "");
+			cout << quote.value("attribution", "") << ": " << endl;
+		}
+	}
+
+	if (target.empty()) {
+		throw runtime_error{"No text provided"};
+	}
+
 	target = nfd(target);
 
 	if (wrap_width > 0) {
@@ -482,8 +595,7 @@ int main(int argc, char** argv) {
 	} else {
 		input_fd = open("/dev/tty", O_RDONLY);
 		if (input_fd < 0) {
-			cerr << "Error: cannot open /dev/tty" << endl;
-			return 1;
+			throw runtime_error{"Cannot open /dev/tty"};
 		}
 	}
 
@@ -641,4 +753,38 @@ int main(int argc, char** argv) {
 	}
 
 	return 0;
+}
+
+} // namespace ttt
+
+#ifdef _WIN32
+int wmain(int argc, wchar_t* argv[]) {
+	SetConsoleOutputCP(CP_UTF8);
+#else
+int main(int argc, char* argv[]) {
+#endif
+	try {
+		// This accelerates I/O significantly by allowing C++ to perform its own buffering. Furthermore, this prevents a
+		// failure to forcefully close the stdin thread in case of a shutdown on certain Linux systems.
+		ios::sync_with_stdio(false);
+
+		vector<string> arguments;
+		for (int i = 0; i < argc; ++i) {
+#ifdef _WIN32
+			arguments.emplace_back(tev::utf16to8(argv[i]));
+#else
+			string arg = argv[i];
+			// OSX sometimes (seemingly sporadically) passes the process serial number via a command line parameter. We
+			// would like to ignore this.
+			if (arg.find("-psn") != 0) {
+				arguments.emplace_back(argv[i]);
+			}
+#endif
+		}
+
+		return ttt::main(arguments);
+	} catch (const exception& e) {
+		cerr << format("\nError: {}", e.what());
+		return 1;
+	}
 }

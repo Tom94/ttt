@@ -54,7 +54,7 @@ add_executable(ttt src/main.cpp
 )
 
 target_compile_definitions(ttt PRIVATE ${TTT_DEFINITIONS})
-target_include_directories(ttt PRIVATE dependencies/unilib)
+target_include_directories(ttt PRIVATE dependencies dependencies/unilib)
 target_link_libraries(ttt PRIVATE ${TTT_LIBRARIES})
 
 install(TARGETS ttt)
