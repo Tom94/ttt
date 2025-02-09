@@ -80,10 +80,11 @@ size_t find_grapheme_cluster_end(const string& str, size_t start) {
 
 	// Check for emoji sequences
 	if (pos < str.length()) {
-		unsigned char next = str[pos];
+		using byte = unsigned char;
+		byte next = str[pos];
 		// Check for emoji modifiers, ZWJ sequences, etc.
-		if ((next == 0xF0 && pos + 3 < str.length()) ||                                                 // Emoji
-			(next == 0xE2 && pos + 2 < str.length() && str[pos + 1] == 0x80 && str[pos + 2] == 0x8D)) { // ZWJ
+		if ((next == 0xF0 && pos + 3 < str.length()) ||                                                             // Emoji
+			(next == 0xE2 && pos + 2 < str.length() && (byte)str[pos + 1] == 0x80 && (byte)str[pos + 2] == 0x8D)) { // ZWJ
 			return find_grapheme_cluster_end(str, pos);
 		}
 	}
