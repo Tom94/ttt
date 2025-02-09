@@ -719,71 +719,85 @@ int main(const vector<string>& args) {
 	while (true) {
 #ifdef _WIN32
 		DWORD n;
-		if (!ReadConsoleA(GetStdHandle(STD_INPUT_HANDLE), &c, 1, &n, NULL)) {
+		wchar_t wc;
+		if (!ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), &wc, 1, &n, NULL)) {
 			continue;
 		}
+
+		// Convert wide character to UTF-8
+		char utf8_buf[8] = {0};
+		int utf8_len = WideCharToMultiByte(CP_UTF8, 0, &wc, 1, utf8_buf, sizeof(utf8_buf), NULL, NULL);
+		if (utf8_len <= 0) {
+			continue;
+		}
+
+		// Process each UTF-8 byte
+		for (int i = 0; i < utf8_len; ++i) {
+			c = utf8_buf[i];
 #else
 		ssize_t n = read(input_fd, &c, 1);
-#endif
-
 		if (n <= 0) {
 			continue;
 		}
 
-		if (!timing_started) {
-			start_time = chrono::steady_clock::now();
-			timing_started = true;
-		}
+		{
+#endif
 
-		if (c == 27) { // Close on esc
-			term.restore();
-			cout << "\n\nCancelled.\n";
-			return 0;
-		} else if ((c == 127 || c == '\b')) { // Backspace
-			if (!user_input.empty()) {
-				size_t prev = prev_char_pos(user_input, user_input.length());
-				user_input.erase(prev);
-			}
-		} else if (c == 23) { // Ctrl-W (delete word)
-			// Delete any trailing whitespace first.
-			while (!user_input.empty() && isspace(user_input.back())) {
-				user_input.pop_back();
+			if (!timing_started) {
+				start_time = chrono::steady_clock::now();
+				timing_started = true;
 			}
 
-			// Then delete characters until the previous whitespace.
-			while (!user_input.empty() && !isspace(user_input.back())) {
-				user_input.pop_back();
-			}
-		} else if (target[user_input.size()] == '\n' && isspace(c)) { // Let the user press space instead of newline
-			user_input.push_back('\n');
-
-			// Determine current line index by counting newline characters.
-			int current_line = 0;
-			for (char ch : user_input) {
-				if (ch == '\n') {
-					++current_line;
+			if (c == 27) { // Close on esc
+				term.restore();
+				cout << "\n\nCancelled.\n";
+				return 0;
+			} else if ((c == 127 || c == '\b')) { // Backspace
+				if (!user_input.empty()) {
+					size_t prev = prev_char_pos(user_input, user_input.length());
+					user_input.erase(prev);
 				}
-			}
+			} else if (c == 23) { // Ctrl-W (delete word)
+				// Delete any trailing whitespace first.
+				while (!user_input.empty() && isspace(user_input.back())) {
+					user_input.pop_back();
+				}
 
-			// If there is a subsequent line in target_lines, inject its leading whitespace.
-			if ((size_t)current_line < target_lines.size()) {
-				string prefix;
-				for (char ch : target_lines[current_line]) {
-					if (ch == ' ' || ch == '\t') {
-						prefix.push_back(ch);
-					} else {
-						break;
+				// Then delete characters until the previous whitespace.
+				while (!user_input.empty() && !isspace(user_input.back())) {
+					user_input.pop_back();
+				}
+			} else if (target[user_input.size()] == '\n' && isspace(c)) { // Let the user press space instead of newline
+				user_input.push_back('\n');
+
+				// Determine current line index by counting newline characters.
+				int current_line = 0;
+				for (char ch : user_input) {
+					if (ch == '\n') {
+						++current_line;
 					}
 				}
 
-				user_input += prefix;
-			}
-		} else {
-			if (isspace(c)) {
-				c = ' ';
-			}
+				// If there is a subsequent line in target_lines, inject its leading whitespace.
+				if ((size_t)current_line < target_lines.size()) {
+					string prefix;
+					for (char ch : target_lines[current_line]) {
+						if (ch == ' ' || ch == '\t') {
+							prefix.push_back(ch);
+						} else {
+							break;
+						}
+					}
 
-			user_input.push_back(c);
+					user_input += prefix;
+				}
+			} else {
+				if (isspace(c)) {
+					c = ' ';
+				}
+
+				user_input.push_back(c);
+			}
 		}
 
 		cout << ANSI_RESTORE_CURSOR;
