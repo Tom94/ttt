@@ -3,6 +3,7 @@
 
 #include <cctype>
 #include <chrono>
+#include <cstring>
 #include <fcntl.h>
 #include <format>
 #include <iostream>
@@ -13,8 +14,121 @@
 #include <termios.h>
 #include <unistd.h>
 #include <vector>
+#include <wchar.h>
 
 using namespace std;
+
+// Returns the number of bytes in a UTF-8 character based on its first byte
+int utf8_char_length(unsigned char first_byte) {
+	if ((first_byte & 0x80) == 0) {
+		return 1;
+	}
+
+	if ((first_byte & 0xE0) == 0xC0) {
+		return 2;
+	}
+
+	if ((first_byte & 0xF0) == 0xE0) {
+		return 3;
+	}
+
+	if ((first_byte & 0xF8) == 0xF0) {
+		return 4;
+	}
+
+	return 1; // Invalid UTF-8 byte, treat as single byte
+}
+
+// Check if this byte is a continuation byte in UTF-8
+bool is_utf8_continuation(unsigned char byte) { return (byte & 0xC0) == 0x80; }
+
+// Check if this byte starts a combining character
+bool is_combining_char(const string& str, size_t pos) {
+	if (pos >= str.length()) {
+		return false;
+	}
+
+	wchar_t wc;
+	char buf[8] = {0};
+	int len = utf8_char_length(str[pos]);
+	strncpy(buf, &str[pos], len);
+	mbtowc(&wc, buf, len);
+
+	// Unicode ranges for combining characters
+	return (wc >= 0x0300 && wc <= 0x036F) || // Combining Diacritical Marks
+		(wc >= 0x1AB0 && wc <= 0x1AFF) ||    // Combining Diacritical Marks Extended
+		(wc >= 0x1DC0 && wc <= 0x1DFF) ||    // Combining Diacritical Marks Supplement
+		(wc >= 0x20D0 && wc <= 0x20FF) ||    // Combining Diacritical Marks for Symbols
+		(wc >= 0xFE20 && wc <= 0xFE2F);      // Combining Half Marks
+}
+
+// Find the end of the current grapheme cluster
+size_t find_grapheme_cluster_end(const string& str, size_t start) {
+	if (start >= str.length()) {
+		return start;
+	}
+
+	size_t pos = start;
+	pos += utf8_char_length(str[pos]);
+
+	// Include any following combining characters
+	while (pos < str.length() && is_combining_char(str, pos)) {
+		pos += utf8_char_length(str[pos]);
+	}
+
+	// Check for emoji sequences
+	if (pos < str.length()) {
+		unsigned char next = str[pos];
+		// Check for emoji modifiers, ZWJ sequences, etc.
+		if ((next == 0xF0 && pos + 3 < str.length()) ||                                                 // Emoji
+			(next == 0xE2 && pos + 2 < str.length() && str[pos + 1] == 0x80 && str[pos + 2] == 0x8D)) { // ZWJ
+			return find_grapheme_cluster_end(str, pos);
+		}
+	}
+
+	return pos;
+}
+
+// Get the display width of a UTF-8 character
+int get_char_width(const string& str, size_t pos) {
+	if (pos >= str.length()) {
+		return 0;
+	}
+
+	// Convert the UTF-8 character to a wide character
+	wchar_t wc;
+	char buf[8] = {0};
+	int len = utf8_char_length(str[pos]);
+	strncpy(buf, &str[pos], len);
+	mbtowc(&wc, buf, len);
+
+	// Get the display width using wcwidth
+	int width = wcwidth(wc);
+	return width >= 0 ? width : 1;
+}
+
+// Get the next UTF-8 character position
+size_t next_char_pos(const string& str, size_t pos) {
+	if (pos >= str.length()) {
+		return str.length();
+	}
+
+	return pos + utf8_char_length(str[pos]);
+}
+
+// Get the previous UTF-8 character position
+size_t prev_char_pos(const string& str, size_t pos) {
+	if (pos <= 0) {
+		return 0;
+	}
+
+	size_t prev = pos - 1;
+	while (prev > 0 && (str[prev] & 0xC0) == 0x80) {
+		prev--;
+	}
+
+	return prev;
+}
 
 const string ANSI_SAVE_CURSOR = "\033[s";
 const string ANSI_RESTORE_CURSOR = "\033[u";
@@ -31,12 +145,22 @@ string move_cursor_down(int n) { return std::format("\033[{}B", n); }
 string move_cursor_right(int n) { return std::format("\033[{}C", n); }
 string move_cursor_left(int n) { return std::format("\033[{}D", n); }
 
-string display_char(char c, bool leading = false) {
-	if (leading && c == '\t') {
+string display_char(const string& str, size_t pos, bool leading = false) {
+	if (pos >= str.length()) {
+		return "";
+	}
+
+	if (leading && str[pos] == '\t') {
 		return "    ";
 	}
 
-	return string(1, c);
+	// Skip if we're in the middle of a UTF-8 character
+	if (is_utf8_continuation(str[pos])) {
+		return "";
+	}
+
+	int len = utf8_char_length(str[pos]);
+	return str.substr(pos, len);
 }
 
 size_t draw_state(const vector<string>& target_lines, const string& user_input) {
@@ -57,23 +181,35 @@ size_t draw_state(const vector<string>& target_lines, const string& user_input) 
 		}
 
 		cout << ANSI_CLEAR_LINE;
-		int lineStart = offsets[i];
+		int line_start = offsets[i];
 		int line_end = offsets[i] + target_lines[i].size();
-		for (int j = lineStart; j < line_end; j++) {
+		for (int j = line_start; j < line_end;) {
 			int local_j = j - offsets[i];
 			bool is_leading = (local_j < indent);
 			if (j < (int)user_input.size()) {
-				if (user_input[j] == target_lines[i][local_j]) {
-					cout << ANSI_CORRECT << display_char(target_lines[i][local_j], is_leading) << ANSI_RESET;
-				} else {
-					if (isspace(user_input[j])) {
-						cout << ANSI_INCORRECT_WHITESPACE << display_char(user_input[j], is_leading) << ANSI_RESET;
+				string target_char = display_char(target_lines[i], local_j, is_leading);
+				string user_char = display_char(user_input, j, is_leading);
+
+				if (!target_char.empty()) { // Only process if it's a valid character start
+					if (user_char == target_char) {
+						cout << ANSI_CORRECT << target_char << ANSI_RESET;
 					} else {
-						cout << ANSI_INCORRECT << display_char(user_input[j], is_leading) << ANSI_RESET;
+						if (isspace(user_input[j])) {
+							cout << ANSI_INCORRECT_WHITESPACE << user_char << ANSI_RESET;
+						} else {
+							cout << ANSI_INCORRECT << user_char << ANSI_RESET;
+						}
 					}
 				}
+			} else if (!is_utf8_continuation(target_lines[i][local_j])) {
+				cout << ANSI_GRAY << display_char(target_lines[i], local_j, is_leading) << ANSI_RESET;
+			}
+
+			// Move to the next character
+			if (is_utf8_continuation(target_lines[i][local_j])) {
+				j++; // Skip continuation bytes
 			} else {
-				cout << ANSI_GRAY << display_char(target_lines[i][local_j], is_leading) << ANSI_RESET;
+				j += utf8_char_length(target_lines[i][local_j]);
 			}
 		}
 
@@ -90,14 +226,18 @@ size_t draw_state(const vector<string>& target_lines, const string& user_input) 
 void move_cursor(const string& user_input) {
 	// Determine the cursor's current row and column based on userInput (accounting for tab width).
 	int current_line = 0, current_col = 0;
-	for (char ch : user_input) {
-		if (ch == '\n') {
+	size_t pos = 0;
+	while (pos < user_input.length()) {
+		if (user_input[pos] == '\n') {
 			++current_line;
 			current_col = 0;
-		} else if (ch == '\t') {
+			pos++;
+		} else if (user_input[pos] == '\t') {
 			current_col += 4; // tab display width: arrow plus three spaces
+			pos++;
 		} else {
-			++current_col;
+			current_col += get_char_width(user_input, pos);
+			pos = next_char_pos(user_input, pos);
 		}
 	}
 
@@ -148,7 +288,70 @@ string wrap_text(const string& text, int wrap_width) {
 		istringstream iss(paragraph);
 		vector<string> words{istream_iterator<string>(iss), istream_iterator<string>()};
 		string line;
+
 		for (const auto& word : words) {
+			// If the word is longer than wrap_width, break it up
+			if (word.size() > static_cast<size_t>(wrap_width)) {
+				// First, add any existing line content
+				if (!line.empty()) {
+					wrapped += line + "\n";
+					line.clear();
+				}
+
+				// Break up the long word while respecting grapheme clusters
+				size_t word_start = 0;
+				size_t current_width = 0;
+				size_t chunk_start = word_start;
+
+				while (word_start < word.size()) {
+					size_t cluster_end = find_grapheme_cluster_end(word, word_start);
+					size_t cluster_size = cluster_end - word_start;
+
+					// Get the display width of this cluster
+					int cluster_width = 0;
+					for (size_t pos = word_start; pos < cluster_end; pos += utf8_char_length(word[pos])) {
+						cluster_width += get_char_width(word, pos);
+					}
+
+					if (current_width + cluster_width > static_cast<size_t>(wrap_width)) {
+						// This cluster would exceed the wrap width
+						if (chunk_start < word_start) {
+							// Output the accumulated chunk
+							if (chunk_start > 0) {
+								wrapped += "\n";
+							}
+							wrapped += word.substr(chunk_start, word_start - chunk_start);
+							chunk_start = word_start;
+							current_width = 0;
+						} else if (cluster_width > wrap_width) {
+							// Single cluster wider than wrap width - force break
+							if (word_start > 0) {
+								wrapped += "\n";
+							}
+							wrapped += word.substr(word_start, cluster_size);
+							word_start = cluster_end;
+							chunk_start = word_start;
+							current_width = 0;
+							continue;
+						}
+					}
+
+					current_width += cluster_width;
+					word_start = cluster_end;
+				}
+
+				// Output any remaining chunk
+				if (chunk_start < word_start) {
+					if (chunk_start > 0) {
+						wrapped += "\n";
+					}
+					wrapped += word.substr(chunk_start, word_start - chunk_start);
+				}
+
+				continue;
+			}
+
+			// Normal word handling
 			if (line.empty()) {
 				line = word;
 			} else if (line.size() + 1 + word.size() <= static_cast<size_t>(wrap_width)) {
@@ -203,6 +406,7 @@ set<string> find_misspelled_words(const string& target, const string& user_input
 }
 
 int main(int argc, char** argv) {
+	setlocale(LC_ALL, "en_US.UTF-8");
 	// Parse command line options
 	int wrap_width{0};
 	for (int i = 1; i < argc; i++) {
@@ -283,7 +487,8 @@ int main(int argc, char** argv) {
 
 		// Process input: handle backspace, Ctrl-W (delete last word), or append character.
 		if ((c == 127 || c == '\b') && !user_input.empty()) {
-			user_input.pop_back();
+			size_t prev = prev_char_pos(user_input, user_input.length());
+			user_input.erase(prev);
 		} else if (c == 23 && !user_input.empty()) {
 			// Delete any trailing whitespace first.
 			while (!user_input.empty() && isspace(user_input.back())) {
