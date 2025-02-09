@@ -10,8 +10,8 @@ Simply pipe the text you'd like to type into `ttt`.
 https://github.com/user-attachments/assets/2ba5599f-d799-4771-878d-0413380693fa
 
 Or generate a random typing test:
-- **Quotes:** running `ttt` (without any argument) will use a random quote from the included list
-- **Words:** running `ttt -n 20` will pick 20 random words from the included list
+- **Quotes:** running `ttt -q` will use a random quote from the included list (courtesy of [tt](https://github.com/lemnos/tt))
+- **Words:** running `ttt -n 20` will pick 20 random words from the included list (courtesy of [tt](https://github.com/lemnos/tt))
 - **AI:** generate text with a language model, e.g., via [aichat](https://github.com/sigoden/aichat).
 ```bash
 $ aichat "Short poetic paragraph about space travel." | ttt --wrap 80
