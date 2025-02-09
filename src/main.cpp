@@ -503,12 +503,11 @@ string ls(const string& path) {
 }
 
 int main(const vector<string>& args) {
+	// Parse command line options
 	string quote_list_name = "en";
 	string word_list_name = "1000en";
 	size_t n_words = 0;
-
-	// Parse command line options
-	size_t wrap_width{0};
+	size_t wrap_width = 0;
 	for (size_t i = 1; i < args.size(); i++) {
 		const string& arg = args[i];
 		if (arg == "-h" || arg == "--help") {
@@ -585,8 +584,14 @@ int main(const vector<string>& args) {
 			uniform_int_distribution<> dis(0, quotes.size() - 1);
 			const json& quote = quotes[dis(gen)];
 
+			string attribution = quote.value("attribution", "");
+			if (attribution.empty()) {
+				attribution = "Unknown person";
+			}
+
+			cout << attribution << ": " << endl;
+
 			target = quote.value("text", "");
-			cout << quote.value("attribution", "") << ": " << endl;
 		}
 	}
 
