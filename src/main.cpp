@@ -415,7 +415,6 @@ set<string> find_misspelled_words(const string& target, const string& user_input
 }
 
 int main(int argc, char** argv) {
-	setlocale(LC_ALL, "en_US.UTF-8");
 	// Parse command line options
 	int wrap_width{0};
 	for (int i = 1; i < argc; i++) {
