@@ -46,8 +46,8 @@ $ cmake --build build
 ## How it was made
 
 I wanted to play around with AI-assisted coding and creating **ttt** seemed like a fun way to do it.
-Ergo: this project was mostly written by AI, with me stepping in just to fix a bug here and there, but mostly just prompting away.
-It's amazing how far AI has come!
+Ergo: this project was in big parts written by AI (maybe 50%?), with me stepping in to fix bugs, making higher-level decisions about tooling and dependencies, etc.
+It's amazing how far these large language models have come!
 
 I used [neovim](https://neovim.io/) with the [avante plugin](https://github.com/yetone/avante.nvim), but if you're not already in the vim ecosystem, you can do the same in [cursor](https://www.cursor.com/).
 
