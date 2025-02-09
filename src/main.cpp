@@ -520,14 +520,17 @@ int main(int argc, char** argv) {
 			term.restore();
 			cout << "\n\nCancelled.\n";
 			return 0;
-		} else if ((c == 127 || c == '\b') && !user_input.empty()) { // Backspace
-			size_t prev = prev_char_pos(user_input, user_input.length());
-			user_input.erase(prev);
-		} else if (c == 23 && !user_input.empty()) { // Ctrl-W (delete word)
+		} else if ((c == 127 || c == '\b')) { // Backspace
+			if (!user_input.empty()) {
+				size_t prev = prev_char_pos(user_input, user_input.length());
+				user_input.erase(prev);
+			}
+		} else if (c == 23) { // Ctrl-W (delete word)
 			// Delete any trailing whitespace first.
 			while (!user_input.empty() && isspace(user_input.back())) {
 				user_input.pop_back();
 			}
+
 			// Then delete characters until the previous whitespace.
 			while (!user_input.empty() && !isspace(user_input.back())) {
 				user_input.pop_back();
