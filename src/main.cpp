@@ -436,8 +436,7 @@ int main(int argc, char** argv) {
 		target = wrap_text(target, wrap_width);
 	}
 
-	// Trim target text to remove leading/trailing whitespace.
-	target.erase(target.begin(), find_if(target.begin(), target.end(), [](unsigned char ch) { return !isspace(ch); }));
+	// Remove trailing whitespace from target text
 	target.erase(find_if(target.rbegin(), target.rend(), [](unsigned char ch) { return !isspace(ch); }).base(), target.end());
 
 	// Determine the interactive input file descriptor.
