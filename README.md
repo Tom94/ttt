@@ -10,9 +10,9 @@ Simply pipe the text you'd like to type into `ttt`.
 https://github.com/user-attachments/assets/2ba5599f-d799-4771-878d-0413380693fa
 
 Or generate a random typing test:
-- **Quotes:** running `ttt -q` will use a random quote from the included list (courtesy of [tt](https://github.com/lemnos/tt))
-- **Words:** running `ttt -n 20` will pick 20 random words from the included list (courtesy of [tt](https://github.com/lemnos/tt))
-- **AI:** generate text with a language model, e.g., via [aichat](https://github.com/sigoden/aichat).
+- **Quotes:** `ttt -q` picks a random quote from the included list (courtesy of [tt](https://github.com/lemnos/tt))
+- **Words:** `ttt -n 20` picks 20 random words from the included list (courtesy of [tt](https://github.com/lemnos/tt))
+- **AI:** a language model generates text, e.g., via [aichat](https://github.com/sigoden/aichat).
 ```bash
 $ aichat "Short poetic paragraph about space travel." | ttt --wrap 80
 ```
@@ -25,9 +25,10 @@ Time: 0:10, WPM: 143, Accuracy: 100.00% 🎉
 
 ### Options
 
-- `-q`, `--quote [LISTNAME]` to use a random quote (default) [optional: name of quote list (default: en)]
+- `-q`, `--quote [LISTNAME]` to use a random quote [optional: name of quote list (default: en)]
 - `-n`, `--nwords N [LISTNAME]` to generate `N` random words [optional: name of word list (default: 1000en)]
-- `-w`, `--wrap WIDTH` to word wrap to the given width (no wrapping by default)
+- `-t`, `--tab WIDTH` to set the tab width (default: 4)
+- `-w`, `--wrap WIDTH` to word wrap to the given width (default: wrap to terminal width)
 - `-h`, `--help` to show help info
 - `-v`, `--version` to show version info
 
