@@ -11,3 +11,5 @@ max_line_length = 140
 
 [*.{yml,nix}]
 indent_size = 2
+indent_style = space
+
