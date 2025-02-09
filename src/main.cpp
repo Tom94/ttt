@@ -46,6 +46,23 @@ auto g_fs = cmrc::ttt::get_filesystem();
 
 size_t g_tab_width = 4;
 
+template <typename T> class ScopeGuard {
+public:
+	ScopeGuard(const T& callback) : mCallback{callback} {}
+	ScopeGuard(T&& callback) : mCallback{std::move(callback)} {}
+	ScopeGuard(const ScopeGuard<T>& other) = delete;
+	ScopeGuard& operator=(const ScopeGuard<T>& other) = delete;
+	ScopeGuard(ScopeGuard<T>&& other) { *this = std::move(other); }
+	ScopeGuard& operator=(ScopeGuard<T>&& other) {
+		mCallback = std::move(other.mCallback);
+		other.mCallback = {};
+	}
+	~ScopeGuard() { mCallback(); }
+
+private:
+	T mCallback;
+};
+
 template <typename T> std::string join(const T& components, const std::string& delim) {
 	std::ostringstream s;
 	for (const auto& component : components) {
@@ -702,6 +719,12 @@ int main(const vector<string>& args) {
 			throw runtime_error{"Cannot open /dev/tty"};
 		}
 	}
+
+	ScopeGuard guard{[&input_fd] {
+		if (input_fd != STDIN_FILENO) {
+			close(input_fd);
+		}
+	}};
 #endif
 
 	// Split target into lines for display.
@@ -855,11 +878,6 @@ int main(const vector<string>& args) {
 			first = false;
 		}
 		cout << endl;
-	}
-
-	// Close input_fd if we opened /dev/tty
-	if (input_fd != STDIN_FILENO) {
-		close(input_fd);
 	}
 
 	return 0;
