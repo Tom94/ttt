@@ -100,10 +100,14 @@ file(GLOB TTT_RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/resources/**/*")
 cmrc_add_resource_library(ttt-resources NAMESPACE ttt ${TTT_RESOURCES})
 list(APPEND TTT_LIBRARIES ttt-resources)
 
-add_executable(ttt src/main.cpp
+add_executable(ttt
+	src/main.cpp
+
 	dependencies/unilib/unilib/unicode.cpp
 	dependencies/unilib/unilib/uninorms.cpp
 	dependencies/unilib/unilib/unistrip.cpp
+
+	dependencies/wcwidth/wcwidth.cpp
 )
 
 target_compile_definitions(ttt PRIVATE ${TTT_DEFINITIONS})
