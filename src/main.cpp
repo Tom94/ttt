@@ -574,11 +574,11 @@ int main(const vector<string>& args) {
 			} else {
 				quote_list_name = "en";
 			}
-		} else if ((arg == "-w" || arg == "--wrap") && i + 1 < args.size()) {
-			try {
-				wrap_width = stoul(args[++i]);
-			} catch (...) { throw invalid_argument{"Invalid wrap width provided"}; }
 		} else if ((arg == "-t" || arg == "--tab") && i + 1 < args.size()) {
+			try {
+				g_tab_width = stoul(args[++i]);
+			} catch (...) { throw invalid_argument{"Invalid tab width provided"}; }
+		} else if ((arg == "-w" || arg == "--wrap") && i + 1 < args.size()) {
 			try {
 				wrap_width = stoul(args[++i]);
 			} catch (...) { throw invalid_argument{"Invalid wrap width provided"}; }
