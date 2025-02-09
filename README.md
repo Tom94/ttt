@@ -11,7 +11,13 @@ https://github.com/user-attachments/assets/2ba5599f-d799-4771-878d-0413380693fa
 In practice, I recommend generating text on the fly with a language model, e.g., via [aichat](https://github.com/sigoden/aichat).
 
 ```bash
-$ aichat "Write a short paragraph about space travel." | ttt
+$ aichat "Write a short paragraph about space travel." | ttt -w 80
+```
+```
+Red dust fell behind as the ship cut through Mars' orbit. Stars beckoned. The
+void stretched endless and dark. We sailed on.
+
+Time: 0:10, WPM: 143, Accuracy: 100.00% 🎉
 ```
 
 ## How to build
