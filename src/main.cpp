@@ -542,6 +542,42 @@ string ls(const string& path) {
 	return result.str();
 }
 
+size_t console_width() {
+#ifdef _WIN32
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
+		return csbi.srWindow.Right - csbi.srWindow.Left + 1;
+	}
+#else
+	struct winsize w;
+	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0) {
+		return w.ws_col;
+	}
+#endif
+
+	return 0;
+}
+
+vector<string> get_word_list(const string& name) {
+	vector<string> words;
+
+	try {
+		auto words_file = g_fs.open(format("resources/words/{}", name));
+		string words_string = {words_file.cbegin(), words_file.cend()};
+		return split(words_string, "\n");
+	} catch (...) { throw invalid_argument{format("Invalid word list name provided. Available lists: {}", ls("resources/words"))}; }
+}
+
+json get_quote_list(const string& name) {
+	try {
+		auto quotes_file = g_fs.open(format("resources/quotes/{}", name));
+		return json::parse(quotes_file);
+	} catch (...) { throw invalid_argument{format("Invalid quote list name provided. Available lists: {}", ls("resources/quotes"))}; }
+}
+
+random_device g_rd;
+mt19937 g_rd_gen(g_rd());
+
 int main(const vector<string>& args) {
 	// Parse command line options
 	string quote_list_name = "";
@@ -588,65 +624,42 @@ int main(const vector<string>& args) {
 	// While this program *technically* works without wrapping, it's better to set the wrap width to the terminal width
 	// so that words don't get broken up by the terminal which doesn't care for word boundaries.
 	if (wrap_width == 0) {
-#ifdef _WIN32
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
-			wrap_width = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-		}
-#else
-		struct winsize w;
-		if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0) {
-			wrap_width = w.ws_col;
-		}
-#endif
+		wrap_width = console_width();
 	}
 
 	// Get target either from a word list, a quote list, or stdin
 	string target;
 	if (!word_list_name.empty()) {
-		vector<string> words;
+		auto words = get_word_list(word_list_name);
+		if (words.size() == 0) {
+			throw runtime_error{"No words found"};
+		}
 
-		try {
-			auto words_file = g_fs.open(format("resources/words/{}", word_list_name));
-			string words_string = {words_file.cbegin(), words_file.cend()};
-			words = split(words_string, "\n");
-		} catch (...) { throw invalid_argument{format("Invalid word list name provided. Available lists: {}", ls("resources/words"))}; }
-
-		random_device rd;
-		mt19937 gen(rd());
 		uniform_int_distribution<> dis(0, words.size() - 1);
 
 		vector<string> selected_words;
 		for (size_t i = 0; i < n_words; i++) {
-			selected_words.push_back(words[dis(gen)]);
+			selected_words.push_back(words[dis(g_rd_gen)]);
 		}
 
 		target = join(selected_words, " ");
 	} else if (!quote_list_name.empty()) {
-		json quotes;
-
-		try {
-			auto quotes_file = g_fs.open(format("resources/quotes/{}", quote_list_name));
-			quotes = json::parse(quotes_file);
-		} catch (...) { throw invalid_argument{format("Invalid quote list name provided. Available lists: {}", ls("resources/quotes"))}; }
-
+		json quotes = get_quote_list(quote_list_name);
 		if (quotes.size() == 0) {
 			throw runtime_error{"No quotes found"};
 		}
 
-		random_device rd;
-		mt19937 gen(rd());
 		uniform_int_distribution<> dis(0, quotes.size() - 1);
+		const json& quote = quotes[dis(g_rd_gen)];
 
-		const json& quote = quotes[dis(gen)];
+		target = quote.value("text", "");
+
 		string attribution = quote.value("attribution", "");
 		if (attribution.empty()) {
 			attribution = "Unknown person";
 		}
 
 		cout << attribution << ": " << endl;
-
-		target = quote.value("text", "");
 	} else {
 		target = string{istreambuf_iterator<char>(cin), istreambuf_iterator<char>()};
 	}
