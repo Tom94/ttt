@@ -9,10 +9,12 @@ Simply pipe the text you'd like to type into `ttt`.
 
 https://github.com/user-attachments/assets/2ba5599f-d799-4771-878d-0413380693fa
 
-In practice, I recommend generating text on the fly with a language model, e.g., via [aichat](https://github.com/sigoden/aichat).
-
+Or generate a random typing test:
+- **Quotes:** running `ttt` (without any argument) will use a random quote from the included list
+- **Words:** running `ttt -n 20` will pick 20 random words from the included list
+- **AI:** generate text with a language model, e.g., via [aichat](https://github.com/sigoden/aichat).
 ```bash
-$ aichat "Short poetic paragraph about space travel." | ttt -w 80
+$ aichat "Short poetic paragraph about space travel." | ttt --wrap 80
 ```
 ```
 Red dust fell behind as the ship cut through Mars' orbit. Stars beckoned. The
@@ -23,7 +25,9 @@ Time: 0:10, WPM: 143, Accuracy: 100.00% 🎉
 
 ### Options
 
-- `-w`, `--wrap` to word wrap to the given width (no wrapping by default)
+- `-q`, `--quote [LISTNAME]` to use a random quote (default) [optional: name of quote list (default: en)]
+- `-n`, `--nwords N [LISTNAME]` to generate `N` random words [optional: name of word list (default: 1000en)]
+- `-w`, `--wrap WIDTH` to word wrap to the given width (no wrapping by default)
 - `-h`, `--help` to show help info
 - `-v`, `--version` to show version info
 
@@ -54,13 +58,9 @@ I used [neovim](https://neovim.io/) with the [avante plugin](https://github.com/
 
 ## Shoutouts
 
-- [aichat](https://github.com/sigoden/aichat): the perfect companion to **ttt**
-- [unilib](https://github.com/ufal/unilib): for making unicode handling a breeze
-- [tt](https://github.com/lemnos/tt): another terminal typing test with different feature set. differences to **ttt**:
-  - doesn't support code or unicode
-  - has a full-screen tui rather than being inline
-  - more CLI options and features, including built-in word lists
-
+- [aichat](https://github.com/sigoden/aichat): the perfect companion to **ttt**.
+- [unilib](https://github.com/ufal/unilib): for making unicode handling a breeze.
+- [tt](https://github.com/lemnos/tt): another terminal typing test. **ttt** is inspired by **tt** and uses its word and quote lists.
 
 ## License
 

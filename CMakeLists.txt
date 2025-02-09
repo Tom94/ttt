@@ -41,12 +41,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Include word and quote lists
+include("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cmrc/CMakeRC.cmake")
+file(GLOB TTT_RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/resources/**/*")
+cmrc_add_resource_library(ttt-resources NAMESPACE ttt ${TTT_RESOURCES})
+list(APPEND TTT_LIBRARIES ttt-resources)
+
 add_executable(ttt src/main.cpp
 	dependencies/unilib/unilib/unicode.cpp
 	dependencies/unilib/unilib/uninorms.cpp
 	dependencies/unilib/unilib/unistrip.cpp
 )
+
 target_compile_definitions(ttt PRIVATE ${TTT_DEFINITIONS})
 target_include_directories(ttt PRIVATE dependencies/unilib)
+target_link_libraries(ttt PRIVATE ${TTT_LIBRARIES})
 
 install(TARGETS ttt)
