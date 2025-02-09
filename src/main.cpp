@@ -868,6 +868,17 @@ int main(const vector<string>& args) {
 } // namespace ttt
 
 #ifdef _WIN32
+string utf16_to_utf8(const wstring& utf16) {
+	string utf8;
+	if (!utf16.empty()) {
+		int size = WideCharToMultiByte(CP_UTF8, 0, &utf16[0], (int)utf16.size(), NULL, 0, NULL, NULL);
+		utf8.resize(size, 0);
+		WideCharToMultiByte(CP_UTF8, 0, &utf16[0], (int)utf16.size(), &utf8[0], size, NULL, NULL);
+	}
+
+	return utf8;
+}
+
 int wmain(int argc, wchar_t* argv[]) {
 	SetConsoleOutputCP(CP_UTF8);
 #else
@@ -883,7 +894,7 @@ int main(int argc, char* argv[]) {
 		vector<string> arguments;
 		for (int i = 0; i < argc; ++i) {
 #ifdef _WIN32
-			arguments.emplace_back(tev::utf16to8(argv[i]));
+			arguments.emplace_back(utf16_to_utf8(argv[i]));
 #else
 			string arg = argv[i];
 			// OSX sometimes (seemingly sporadically) passes the process serial number via a command line parameter. We
