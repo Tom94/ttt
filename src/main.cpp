@@ -867,6 +867,8 @@ int wmain(int argc, wchar_t* argv[]) {
 #else
 int main(int argc, char* argv[]) {
 #endif
+	setlocale(LC_ALL, "en_US.UTF-8");
+
 	try {
 		// This accelerates I/O significantly by allowing C++ to perform its own buffering. Furthermore, this prevents a
 		// failure to forcefully close the stdin thread in case of a shutdown on certain Linux systems.
