@@ -1,6 +1,9 @@
 // This file was developed by Thomas Müller <contact@tom94.net>.
 // It is published under the GPLv3 License; see the LICENSE file.
 
+#include <unilib/uninorms.h>
+#include <unilib/utf.h>
+
 #include <cctype>
 #include <chrono>
 #include <cstring>
@@ -175,7 +178,18 @@ string display_char(const string& str, size_t pos, bool leading = false) {
 	return str.substr(pos, len);
 }
 
-size_t draw_state(const vector<string>& target_lines, const string& user_input) {
+string nfd(const string& str) {
+	u32string decoded;
+	unilib::utf::decode(str.c_str(), decoded);
+	unilib::uninorms::nfd(decoded);
+	string result;
+	unilib::utf::encode(decoded, result);
+	return result;
+}
+
+size_t draw_state(const vector<string>& target_lines, string user_input) {
+	user_input = nfd(user_input);
+
 	// Compute cumulative offsets for each line within the displayed block.
 	vector<size_t> offsets(target_lines.size());
 	size_t cum = 0;
@@ -452,6 +466,8 @@ int main(int argc, char** argv) {
 
 	// Get test text from user (multi-line)
 	string target{istreambuf_iterator<char>(cin), istreambuf_iterator<char>()};
+	target = nfd(target);
+
 	if (wrap_width > 0) {
 		target = wrap_text(target, wrap_width);
 	}
@@ -578,6 +594,8 @@ int main(int argc, char** argv) {
 			break;
 		}
 	}
+
+	user_input = nfd(user_input);
 
 	end_time = chrono::steady_clock::now();
 	term.restore(); // Restore the original terminal settings

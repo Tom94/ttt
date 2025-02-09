@@ -41,7 +41,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(ttt src/main.cpp)
+add_executable(ttt src/main.cpp
+	dependencies/unilib/unilib/unicode.cpp
+	dependencies/unilib/unilib/uninorms.cpp
+	dependencies/unilib/unilib/unistrip.cpp
+)
 target_compile_definitions(ttt PRIVATE ${TTT_DEFINITIONS})
+target_include_directories(ttt PRIVATE dependencies/unilib)
 
 install(TARGETS ttt)
