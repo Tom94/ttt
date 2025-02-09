@@ -496,11 +496,14 @@ int main(int argc, char** argv) {
 			timing_started = true;
 		}
 
-		// Process input: handle backspace, Ctrl-W (delete last word), or append character.
-		if ((c == 127 || c == '\b') && !user_input.empty()) {
+		if (c == 27) { // Close on esc
+			term.restore();
+			cout << "\n\nCancelled.\n";
+			return 0;
+		} else if ((c == 127 || c == '\b') && !user_input.empty()) { // Backspace
 			size_t prev = prev_char_pos(user_input, user_input.length());
 			user_input.erase(prev);
-		} else if (c == 23 && !user_input.empty()) {
+		} else if (c == 23 && !user_input.empty()) { // Ctrl-W (delete word)
 			// Delete any trailing whitespace first.
 			while (!user_input.empty() && isspace(user_input.back())) {
 				user_input.pop_back();
@@ -509,7 +512,7 @@ int main(int argc, char** argv) {
 			while (!user_input.empty() && !isspace(user_input.back())) {
 				user_input.pop_back();
 			}
-		} else if (target[user_input.size()] == '\n' && isspace(c)) {
+		} else if (target[user_input.size()] == '\n' && isspace(c)) { // Let the user press space instead of newline
 			user_input.push_back('\n');
 
 			// Determine current line index by counting newline characters.
@@ -534,6 +537,10 @@ int main(int argc, char** argv) {
 				user_input += prefix;
 			}
 		} else {
+			if (isspace(c)) {
+				c = ' ';
+			}
+
 			user_input.push_back(c);
 		}
 
