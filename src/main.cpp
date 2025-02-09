@@ -806,7 +806,7 @@ int main(const vector<string>& args) {
 		move_cursor(user_input);
 
 		// Check if typing is complete.
-		if (user_input.size() >= total_expected) {
+		if (nfd(user_input).size() >= total_expected) {
 			break;
 		}
 	}
