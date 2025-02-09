@@ -3,10 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   build:
@@ -20,6 +20,7 @@ jobs:
       config: "Release"
     steps:
       - name: Install dependencies
+        if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y cmake gcc g++
       - uses: actions/checkout@v1
       - name: Configure
