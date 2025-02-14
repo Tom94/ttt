@@ -317,7 +317,6 @@ size_t draw_state(const vector<string>& target_lines, string user_input) {
 		}
 	}
 
-	cout.flush();
 	size_t total_expected = offsets.back() + target_lines.back().size();
 	return total_expected;
 }
