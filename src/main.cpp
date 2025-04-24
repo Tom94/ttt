@@ -785,6 +785,9 @@ int main(const vector<string>& args) {
 				size_t prev = prev_char_pos(user_input, user_input.length());
 				user_input.erase(prev);
 			}
+		} else if (c == 18) { // Ctrl-R (reset test)
+			timing_started = false;
+			user_input.clear();
 		} else if (c == 23) { // Ctrl-W (delete word)
 			// Delete any trailing whitespace first.
 			while (!user_input.empty() && isspace(user_input.back())) {
