@@ -780,7 +780,7 @@ int main(const vector<string>& args) {
 			term.restore();
 			cout << "\n\nCancelled.\n";
 			return 0;
-		} else if ((c == 127 || c == '\b')) { // Backspace
+		} else if (c == 127) { // Backspace
 			if (!user_input.empty()) {
 				size_t prev = prev_char_pos(user_input, user_input.length());
 				user_input.erase(prev);
@@ -788,7 +788,7 @@ int main(const vector<string>& args) {
 		} else if (c == 18) { // Ctrl-R (reset test)
 			timing_started = false;
 			user_input.clear();
-		} else if (c == 23) { // Ctrl-W (delete word)
+		} else if (c == 23 || c == 8) { // Ctrl-W or Ctrl+Backspace (delete word)
 			// Delete any trailing whitespace first.
 			while (!user_input.empty() && isspace(user_input.back())) {
 				user_input.pop_back();
