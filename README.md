@@ -32,6 +32,13 @@ Time: 0:10, WPM: 143, Accuracy: 100.00% 🎉
 - `-h`, `--help` to show help info
 - `-v`, `--version` to show version info
 
+### Shortcuts
+
+These shortcuts are available while typing:
+- `Ctrl+C` or `Esc` to abort the test
+- `Ctrl+W` or `Ctrl+Backspace` to delete the last word
+- `Ctrl+R` to reset the test
+
 ## How to build
 
 This project uses CMake and has otherwise no dependencies.
