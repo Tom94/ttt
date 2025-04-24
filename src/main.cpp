@@ -536,14 +536,19 @@ void print_help() {
 		 << "A terminal-based typing test.\n"
 		 << "\n"
 		 << "Options:\n"
-		 << "  -h, --help                 Show this help message and exit\n"
-		 << "  -v, --version              Show version information and exit\n"
-		 << "  -n, --nwords N [LISTNAME]  N random words [word list name]\n"
-		 << "  -q, --quote [LISTNAME]     Random quote from list [quote list name]\n"
-		 << "  -t, --tab WIDTH            Tab width\n"
-		 << "  -w, --wrap WIDTH           Word-wrap text at WIDTH characters\n"
+		 << "  -h, --help                  Show this help message and exit\n"
+		 << "  -v, --version               Show version information and exit\n"
+		 << "  -n, --nwords N [LISTNAME]   N random words [word list name]\n"
+		 << "  -q, --quote [LISTNAME]      Random quote from list [quote list name]\n"
+		 << "  -t, --tab WIDTH             Tab width\n"
+		 << "  -w, --wrap WIDTH            Word-wrap text at WIDTH characters\n"
 		 << "\n"
-		 << "Input text via stdin. Press ESC or Ctrl-C to quit.\n";
+		 << "Shortcuts:\n"
+		 << "  - Ctrl+C or Esc             Cancel the test\n"
+		 << "  - Ctrl+W or Ctrl+Backspace  Delete the previous word\n"
+		 << "  - Ctrl+R                    Reset the test\n"
+		 << "\n"
+		 << "Input test via stdin.\n";
 	cout.flush();
 }
 
